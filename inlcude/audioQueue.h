@@ -37,7 +37,7 @@ class audioQueue
                              audioQueue         (const  std::uint32_t    sampleRate,
                                                  const  std:: uint8_t    channelNumbers,
                                                  const  std::  size_t    frames);
-                             //audioQueue         (const   audioQueue<T>   &other) = delete;
+                             audioQueue         (const   audioQueue<T>   &other);
                              audioQueue         (        audioQueue<T>  &&other)                noexcept;
 
                        bool  push               (const             T*    ptr, 
@@ -86,6 +86,24 @@ template<audioType T>
 inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate, const std::uint8_t channelNumbers, const std::size_t frames)
     :   queue(frames * channelNumbers),audioSampleRate(sampleRate), channelNum(channelNumbers),
     head(0), tail(0), usage(0), elementCount(0), lowerThreshold(0), upperThreshold(100), inputDelay(45), outputDelay(15) {}
+
+template<audioType T>
+inline audioQueue<T>::audioQueue(const audioQueue<T>& other)
+{
+   
+    queue = other.queue;
+    head.store(other.head.load());
+    tail.store(other.tail.load());
+    elementCount.store(other.elementCount.load());
+
+    audioSampleRate = other.audioSampleRate;
+    inputDelay = other.inputDelay;
+    outputDelay = other.outputDelay;
+    channelNum = other.channelNum;
+    lowerThreshold = other.lowerThreshold;
+    upperThreshold = other.upperThreshold;
+    usage.store(other.usage.load());
+}
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(audioQueue<T>&& other) noexcept

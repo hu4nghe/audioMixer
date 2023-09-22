@@ -25,6 +25,7 @@ constexpr auto QUEUE_SIZE_MULTIPLIER		= 1.5;
 
 
 std::vector<audioQueue<float>> NDIdata;
+audioQueue<float> nditest(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, 0);
 audioQueue<float> SNDdata(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, 0);
 audioQueue<float> MICdata(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, 0);
 #pragma endregion
@@ -85,30 +86,10 @@ static int portAudioOutputCallback(	const	void*						inputBuffer,
 											PaStreamCallbackFlags		statusFlags,
 											void*						UserData)
 {
-	//auto in  = static_cast<const float*>(inputBuffer);
 	auto out = static_cast<float*>(outputBuffer);
 	memset(out, 0, sizeof(out) * framesPerBuffer);
-
-	//if (!MICdata.empty()) MICdata.pop(out, framesPerBuffer, true);
-	//if (!SNDdata.empty()) SNDdata.pop(out, framesPerBuffer, true);
-	for (auto i : NDIdata[0].getvec())
-	{
-		std::print("{}\n", i);
-	}
 	NDIdata[0].pop(out, framesPerBuffer, true);
-	for (int i = 0; i < framesPerBuffer * 2; i++)
-	{
-		std::print("			{}\n", out[i]);
-	}
-	/*for(auto &i : NDIdata)
-	{
-		if (!i.empty())
-			i.pop(out, framesPerBuffer, true);
-	}
-	for (uint32_t i = 0; i < framesPerBuffer * 2; i++)
-	{
-		out[i] += in[i];
-	}*/
+	
 	return paContinue;
 }
 
