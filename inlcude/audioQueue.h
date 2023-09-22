@@ -150,7 +150,6 @@ bool audioQueue<T>::dequeue(T& value, const bool mode)
 
     if (!mode) value  = queue[currentHead];
     else       value += queue[currentHead];
-
     head        .store      ((currentHead + 1) % queue.size(), std::memory_order_release);
     elementCount.fetch_sub  (                               1, std::memory_order_relaxed);
 
@@ -168,7 +167,13 @@ inline void audioQueue<T>::clear()
 template<audioType T>
 inline void audioQueue<T>::usageRefresh() 
 { 
-    usage.store(static_cast<std::uint8_t>(static_cast<double>(elementCount.load()) / queue.size() * 100.0)); //std::print("usage : {}\n", usage.load()); 
+    if (queue.size() == 0)
+    {
+        std::print("error : queue size is 0.\n");
+        return;
+    }
+    usage.store(static_cast<std::uint8_t>(static_cast<double>(elementCount.load()) / queue.size() * 100.0)); 
+    //std::print("usage : {}\n", usage.load()); 
 }
 
 template<audioType T>
@@ -205,7 +210,7 @@ bool audioQueue<T>::push(const T* ptr, std::size_t frames, const std::uint8_t in
     const bool needChannelConversion    = (inputChannelNum != channelNum);
     const bool needResample             = (inputSampleRate != audioSampleRate);
     const auto currentSize              = frames * inputChannelNum;
-   
+
     std::vector<T> temp(ptr, ptr + currentSize);
     /*
     if (needChannelConversion)
@@ -213,7 +218,6 @@ bool audioQueue<T>::push(const T* ptr, std::size_t frames, const std::uint8_t in
     if (needResample)
         resample(temp, frames, inputSampleRate);
     const auto estimatedUsage = usage.load() + (temp.size() * 100 / queue.size());
-
     if (estimatedUsage >= upperThreshold) 
         std::this_thread::sleep_for(std::chrono::milliseconds(inputDelay));
 

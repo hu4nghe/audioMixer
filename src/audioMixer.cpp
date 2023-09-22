@@ -21,7 +21,7 @@ constexpr auto PA_INPUT_CHANNELS			= 0;
 constexpr auto PA_OUTPUT_CHANNELS			= 2;
 constexpr auto PA_FORMAT					= paFloat32;
 constexpr auto NDI_TIMEOUT					= 1000;
-constexpr auto QUEUE_SIZE_MULTIPLIER		= 1.5;
+constexpr auto QUEUE_SIZE_MULTIPLIER		= 2;
 
 
 std::vector<audioQueue<float>> NDIdata;
@@ -88,7 +88,11 @@ static int portAudioOutputCallback(	const	void*						inputBuffer,
 {
 	auto out = static_cast<float*>(outputBuffer);
 	memset(out, 0, sizeof(out) * framesPerBuffer);
-	NDIdata[0].pop(out, framesPerBuffer, true);
+	for (auto& i : NDIdata)
+	{
+		if (!i.empty()) i.pop(out, framesPerBuffer, true);
+	}
+	
 	
 	return paContinue;
 }
