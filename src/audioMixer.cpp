@@ -15,7 +15,7 @@ static void sigIntHandler(int) {exit_loop = true;}
 #pragma endregion
 
 #pragma region Global constants and variables
-constexpr auto PA_SAMPLE_RATE				= 44100;
+constexpr auto PA_SAMPLE_RATE				= 48000;
 constexpr auto PA_BUFFER_SIZE				= 512;
 constexpr auto PA_INPUT_CHANNELS			= 0;
 constexpr auto PA_OUTPUT_CHANNELS			= 2;
@@ -42,6 +42,7 @@ void NDIAudioTread()
 }
 #pragma endregion
 
+/*
 #pragma region Sndfile Input
 void sndfileRead()
 {
@@ -55,7 +56,7 @@ void sndfileRead()
 			std::getline(std::cin >> std::ws, filePathStr);
 			break;
 		}
-	}*/
+	}
 
 		SndfileHandle sndFile("C:/Users/Modulo/Desktop/Nouveau dossier/Music/Rachmaninov- Music For 2 Pianos, Vladimir Ashekenazy & André Previn/Rachmaninov- Music For 2 Pianos [Disc 1]/Rachmaninov- Suite #2 For 2 Pianos, Op. 17 - 3. Romance.wav");
 	const size_t bufferSize = sndFile.frames() * sndFile.channels() + 100;
@@ -71,6 +72,7 @@ void sndfileRead()
 	return;
 }
 #pragma endregion
+*/
 
 #pragma region PA output
 static int portAudioOutputCallback(	const	void*						inputBuffer,

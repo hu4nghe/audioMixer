@@ -1,6 +1,8 @@
 ﻿#include "NDIModule.h"
+#include "Processing.NDI.Lib.h"
 #include <iostream>
 #include <algorithm>
+
 
 constexpr auto NDI_TIMEOUT = 1000;
 constexpr auto QUEUE_SIZE_MULTIPLIER = 2;

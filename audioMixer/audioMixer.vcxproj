@@ -48,7 +48,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Modulo\Desktop\Nouveau dossier %282%29\audioMixer\inlcude;$(WindowsSDK_IncludePath);$(VC_IncludePath);$(SolutionDir)include</IncludePath>
+    <IncludePath>C:\Users\AORUS\source\repos\audioMixer\inlcude;$(WindowsSDK_IncludePath);$(VC_IncludePath);$(SolutionDir)include</IncludePath>
     <LibraryPath>$(WindowsSDK_LibraryPath_x64);$(VC_LibraryPath_x64);$(SolutionDir)lib</LibraryPath>
     <OutDir>$(SolutionDir)bin\</OutDir>
     <ExternalIncludePath>$(SolutionDir)include;$(ExternalIncludePath)</ExternalIncludePath>
