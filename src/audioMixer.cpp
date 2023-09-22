@@ -21,13 +21,7 @@ constexpr auto PA_INPUT_CHANNELS			= 0;
 constexpr auto PA_OUTPUT_CHANNELS			= 2;
 constexpr auto PA_FORMAT					= paFloat32;
 constexpr auto NDI_TIMEOUT					= 1000;
-constexpr auto QUEUE_SIZE_MULTIPLIER		= 2;
-
-
 std::vector<audioQueue<float>> NDIdata;
-audioQueue<float> nditest(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, 0);
-audioQueue<float> SNDdata(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, 0);
-audioQueue<float> MICdata(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, 0);
 #pragma endregion
 
 #pragma region Error Handlers
@@ -44,26 +38,26 @@ inline void  PAErrorCheck (PaError err){if ( err){ std::print("PortAudio error :
 #pragma region NDI Inout
 void NDIAudioTread()
 {
-	func(NDIdata, PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS);
+	NDIAudioReceive(NDIdata, PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS);
 }
 #pragma endregion
 
 #pragma region Sndfile Input
 void sndfileRead()
 {
-	/*
+	//SNDFileReceive();/*
 	std::string filePathStr;
 	while (true)
 	{
-		if(NDIReady.load())
-		{ 
+		if (NDIReady.load())
+		{
 			std::print("Sndfile: Please enter the path of the sound file: ");
 			std::getline(std::cin >> std::ws, filePathStr);
 			break;
 		}
 	}*/
 
-	SndfileHandle sndFile("C:/Users/Modulo/Desktop/Nouveau dossier/Music/Rachmaninov- Music For 2 Pianos, Vladimir Ashekenazy & André Previn/Rachmaninov- Music For 2 Pianos [Disc 1]/Rachmaninov- Suite #2 For 2 Pianos, Op. 17 - 3. Romance.wav");
+		SndfileHandle sndFile("C:/Users/Modulo/Desktop/Nouveau dossier/Music/Rachmaninov- Music For 2 Pianos, Vladimir Ashekenazy & André Previn/Rachmaninov- Music For 2 Pianos [Disc 1]/Rachmaninov- Suite #2 For 2 Pianos, Op. 17 - 3. Romance.wav");
 	const size_t bufferSize = sndFile.frames() * sndFile.channels() + 100;
 
 	float* temp = new float[bufferSize];
@@ -72,7 +66,7 @@ void sndfileRead()
 
 	sndFile.read(temp, bufferSize);
 	SNDdata.push(temp, sndFile.frames(), sndFile.channels(), sndFile.samplerate());
-	
+
 	delete[] temp;
 	return;
 }

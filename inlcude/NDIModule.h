@@ -6,6 +6,6 @@
 #include "Processing.NDI.Lib.h"
 #include "Processing.NDI.Lib.cplusplus.h"
 
-void func(std::vector<audioQueue<float>>& queueList, int PA_SAMPLE_RATE, int PA_OUTPUT_CHANNELS);
+void NDIAudioReceive(std::vector<audioQueue<float>>& queueList, int PA_SAMPLE_RATE, int PA_OUTPUT_CHANNELS);
 
 #endif//NDI_MODUEL_H

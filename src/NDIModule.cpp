@@ -8,7 +8,7 @@ constexpr auto QUEUE_SIZE_MULTIPLIER = 2;
 template <typename T>
 inline T* NDIErrorCheck(T* ptr) { if (!ptr) { std::print("NDI Error: No source is found.\n"); exit(EXIT_FAILURE); } else { return ptr; } }
 
-void func(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RATE, int PA_OUTPUT_CHANNELS)
+void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RATE, int PA_OUTPUT_CHANNELS)
 {
 	NDIlib_initialize();
 	const NDIlib_find_create_t NDIFindCreateDesc;
