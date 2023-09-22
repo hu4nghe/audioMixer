@@ -1,8 +1,9 @@
 ﻿#include "NDIModule.h"
 #include <iostream>
+#include <algorithm>
 
 constexpr auto NDI_TIMEOUT = 1000;
-constexpr auto QUEUE_SIZE_MULTIPLIER = 1.5;
+constexpr auto QUEUE_SIZE_MULTIPLIER = 2;
 
 template <typename T>
 inline T* NDIErrorCheck(T* ptr) { if (!ptr) { std::print("NDI Error: No source is found.\n"); exit(EXIT_FAILURE); } else { return ptr; } }
@@ -64,13 +65,8 @@ void func(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RATE, int PA_
 	{
 		auto pNDIRecv = NDIErrorCheck(NDIlib_recv_create_v3(&i));
 		recvList.push_back(pNDIRecv);
-	}
-
-	for (auto& i : recvList) 
-	{
 		audioQueue<float> NDIdata(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, 0);
 		queueList.push_back(std::move(NDIdata));
-
 	}
 
 	while (true)
@@ -78,7 +74,9 @@ void func(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RATE, int PA_
 		for (auto i = 0; i < recvList.size();i++)
 		{
 			NDIlib_audio_frame_v2_t audioInput;
-			if (NDIlib_recv_capture_v2(recvList[i], nullptr, &audioInput, nullptr, NDI_TIMEOUT) == NDIlib_frame_type_audio)
+			auto type = NDIlib_recv_capture_v2(recvList[i], nullptr, &audioInput, nullptr,0);
+			if (type == NDIlib_frame_type_none) continue;
+			if (type == NDIlib_frame_type_audio)
 			{
 				const auto dataSize = static_cast<size_t>(audioInput.no_samples) * audioInput.no_channels;
 
@@ -86,13 +84,13 @@ void func(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RATE, int PA_
 				NDIlib_audio_frame_interleaved_32f_t audioDataNDI;
 				audioDataNDI.p_data = new float[dataSize];
 				NDIlib_util_audio_to_interleaved_32f_v2(&audioInput, &audioDataNDI);
-				
-				
+
 				queueList[i].setCapacity(dataSize * QUEUE_SIZE_MULTIPLIER);
 				queueList[i].push(audioDataNDI.p_data, audioDataNDI.no_samples, audioDataNDI.no_channels, audioDataNDI.sample_rate);
-				
+
 				delete[] audioDataNDI.p_data;
 			}
+			else continue;
 		}
 	}
 	NDIlib_find_destroy(pNDIFind);
