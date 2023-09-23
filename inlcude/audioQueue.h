@@ -54,11 +54,11 @@ class audioQueue
 
     inline             void  setSampleRate      (const  std::uint32_t    sRate)                        noexcept     { audioSampleRate = sRate; }
     inline             void  setChannelNum      (const  std:: uint8_t    cNum )                        noexcept     { channelNum = cNum; }
-                       void  setCapacity        (const  std::  size_t    newCapacity)                  noexcept;
+                       void  setCapacity        (const  std::  size_t    newCapacity);                  
                        void  setDelay           (const  std:: uint8_t    lower,
                                                  const  std:: uint8_t    upper,
                                                  const  std::uint32_t    inputDelay,
-                                                 const  std::uint32_t    outputDelay)                  noexcept;
+                                                 const  std::uint32_t    outputDelay);
 
                
     inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return audioSampleRate; }
@@ -98,32 +98,32 @@ inline audioQueue<T>::audioQueue(const audioQueue<T> &other)
 {
    
     queue = other.queue;
-    head.store(other.head.load());
-    tail.store(other.tail.load());
-    elementCount.store(other.elementCount.load());
+    head.           store(other.head.load());
+    tail.           store(other.tail.load());
+    elementCount.   store(other.elementCount.load());
     audioSampleRate = other.audioSampleRate;
-    inputDelay = other.inputDelay;
-    outputDelay = other.outputDelay;
-    channelNum = other.channelNum;
-    lowerThreshold = other.lowerThreshold;
-    upperThreshold = other.upperThreshold;
-    usage.store(other.usage.load());
+    inputDelay      = other.inputDelay;
+    outputDelay     = other.outputDelay;
+    channelNum      = other.channelNum;
+    lowerThreshold  = other.lowerThreshold;
+    upperThreshold  = other.upperThreshold;
+    usage.          store(other.usage.load());
 }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
 {
     queue = std::move(other.queue);
-    head.store(other.head.load());
-    tail.store(other.tail.load());
-    elementCount.store(other.elementCount.load());
+    head.           store(other.head.load());
+    tail.           store(other.tail.load());
+    elementCount.   store(other.elementCount.load());
     audioSampleRate = other.audioSampleRate;
-    inputDelay = other.inputDelay;
-    outputDelay = other.outputDelay;
-    channelNum = other.channelNum;
-    lowerThreshold = other.lowerThreshold;
-    upperThreshold = other.upperThreshold;
-    usage.store(other.usage.load());
+    inputDelay      = other.inputDelay;
+    outputDelay     = other.outputDelay;
+    channelNum      = other.channelNum;
+    lowerThreshold  = other.lowerThreshold;
+    upperThreshold  = other.upperThreshold;
+    usage.          store(other.usage.load());
 }
 
 
@@ -134,15 +134,13 @@ template<audioType T>
 bool audioQueue<T>::enqueue(const T value)
 {
     auto currentTail = tail.load(std::memory_order_relaxed);
-    auto    nextTail = (currentTail + 1) % queue.size();
+    auto nextTail    = (currentTail + 1) % queue.size();
 
     if (nextTail == head.load(std::memory_order_acquire)) return false; // Queue is full
 
     queue[currentTail] = value;
-    
     tail        .store      (nextTail, std::memory_order_release);
     elementCount.fetch_add  (       1, std::memory_order_relaxed);
-
     return true;
 }
 
@@ -158,7 +156,6 @@ bool audioQueue<T>::dequeue(         T &value,
     else       value += queue[currentHead];
     head        .store      ((currentHead + 1) % queue.size(), std::memory_order_release);
     elementCount.fetch_sub  (                               1, std::memory_order_relaxed);
-
     return true;
 }
 
@@ -269,7 +266,7 @@ bool audioQueue<T>::pop(                 T* &ptr,
 }
 
 template<audioType T>
-inline void audioQueue<T>::setCapacity(const std::size_t newCapacity)
+inline void audioQueue<T>::setCapacity(const std::size_t newCapacity) 
 {   
     if (newCapacity == queue.size()) return;
     else
@@ -283,7 +280,7 @@ template<audioType T>
 inline void audioQueue<T>::setDelay(const std:: uint8_t lower, 
                                     const std:: uint8_t upper, 
                                     const std::uint32_t inputDelay, 
-                                    const std::uint32_t outputDelay)
+                                    const std::uint32_t outputDelay) 
 {
     auto isInRange = [](const std::uint8_t val) { return val >= 0 && val <= 100; };
     if (isInRange(lowerThreshold) && isInRange(upperThreshold))
