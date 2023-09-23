@@ -20,7 +20,6 @@ constexpr auto PA_BUFFER_SIZE				= 512;
 constexpr auto PA_INPUT_CHANNELS			= 0;
 constexpr auto PA_OUTPUT_CHANNELS			= 2;
 constexpr auto PA_FORMAT					= paFloat32;
-constexpr auto NDI_TIMEOUT					= 1000;
 std::vector<audioQueue<float>> NDIdata;
 #pragma endregion
 
