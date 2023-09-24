@@ -11,10 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\inlcude\audioQueue.h" />
+    <ClCompile Include="..\src\audioQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\audioQueue.cpp" />
+    <ClInclude Include="..\include\audioQueue.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

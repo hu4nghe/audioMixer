@@ -21,6 +21,9 @@ inline T* NDIErrorCheck(T* ptr)
 void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RATE, int PA_OUTPUT_CHANNELS)
 {
 	NDIlib_initialize();
+
+	std::size_t speedCounter = 0;
+
 	const NDIlib_find_create_t NDIFindCreateDesc;
 	auto pNDIFind = NDIErrorCheck(NDIlib_find_create_v2(&NDIFindCreateDesc));
 	uint32_t NDISourceNum = 0;
@@ -78,7 +81,7 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 		audioQueue<float> NDIdata(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, 0);
 		queueList.push_back(std::move(NDIdata));
 	}
-
+	
 	while (true)
 	{
 		for (auto i = 0; i < recvList.size();i++)
@@ -103,6 +106,7 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 			else continue;
 		}
 	}
+
 	NDIlib_find_destroy(pNDIFind);
 	for (auto &i : recvList)
 	{

@@ -11,10 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\inlcude\NDIModule.h" />
+    <ClCompile Include="..\src\NDIModule.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\NDIModule.cpp" />
+    <ClInclude Include="..\include\NDIModule.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

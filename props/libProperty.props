@@ -4,7 +4,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <OutDir>$(SolutionDir)lib\</OutDir>
-    <IncludePath>$(SolutionDir)\inlcude;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>

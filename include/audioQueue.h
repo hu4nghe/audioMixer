@@ -195,7 +195,7 @@ inline void audioQueue<T>::usageRefresh()
         std::print("error : queue size is 0.\n");
         return;
     }
-    auto newUsage = static_cast<double>(elementCount.load()) / queue.size() * 100.0
+    auto newUsage = static_cast<double>(elementCount.load()) / queue.size() * 100.0;
     usage.store(static_cast<std::uint8_t>(newUsage)); 
     //std::print("usage : {}\n", usage.load()); 
 }
@@ -251,7 +251,8 @@ bool audioQueue<T>::push(const             T* ptr,
 
     if (estimatedUsage >= upperThreshold) 
         std::this_thread::sleep_for(std::chrono::milliseconds(inputDelay));
-
+    //std::chrono::seconds timeLimit(1);
+    //std::chrono::steady_clock::now();
     for (const auto i : temp)
     {
         if (!this->enqueue(i))

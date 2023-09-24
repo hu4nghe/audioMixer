@@ -7,11 +7,9 @@ blocker::blocker()
 		prevErr(0),
 		integral(0),
 		target(50),
+		delay(0),
 		inputSpeed(0),
 		outputSpeed(0){}
-
-{
-}
 
 blocker::blocker(double kp,
 				 double ki, 
@@ -23,6 +21,7 @@ blocker::blocker(double kp,
 		prevErr(0), 
 		integral(0), 
 		target(targetPoint),
+		delay(0),
 		inputSpeed(0),
 		outputSpeed(0){}
 
