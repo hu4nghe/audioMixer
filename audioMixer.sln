@@ -4,16 +4,36 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NDIModule", "NDIModule\NDIModule.vcxproj", "{34A11358-9699-4BE5-94BF-8C0E694FE01F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{851F41CC-871A-4E02-8829-D370920FDE23} = {851F41CC-871A-4E02-8829-D370920FDE23}
+		{EA29AE4F-40DE-4342-B5F7-F455458A9E4C} = {EA29AE4F-40DE-4342-B5F7-F455458A9E4C}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "audioQueue", "audioQueue\audioQueue.vcxproj", "{EA29AE4F-40DE-4342-B5F7-F455458A9E4C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{851F41CC-871A-4E02-8829-D370920FDE23} = {851F41CC-871A-4E02-8829-D370920FDE23}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "audioMixer", "audioMixer\audioMixer.vcxproj", "{937716D9-A74B-46B7-ABFC-6397FD42E66F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{34A11358-9699-4BE5-94BF-8C0E694FE01F} = {34A11358-9699-4BE5-94BF-8C0E694FE01F}
+		{851F41CC-871A-4E02-8829-D370920FDE23} = {851F41CC-871A-4E02-8829-D370920FDE23}
+		{E4C99B91-2626-4315-9854-27AAFAB87484} = {E4C99B91-2626-4315-9854-27AAFAB87484}
+		{EA29AE4F-40DE-4342-B5F7-F455458A9E4C} = {EA29AE4F-40DE-4342-B5F7-F455458A9E4C}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SoundFileModule", "SoundFileModule\SoundFileModule.vcxproj", "{E4C99B91-2626-4315-9854-27AAFAB87484}"
+	ProjectSection(ProjectDependencies) = postProject
+		{851F41CC-871A-4E02-8829-D370920FDE23} = {851F41CC-871A-4E02-8829-D370920FDE23}
+		{EA29AE4F-40DE-4342-B5F7-F455458A9E4C} = {EA29AE4F-40DE-4342-B5F7-F455458A9E4C}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "queueBlocker", "queueBlocker\queueBlocker.vcxproj", "{851F41CC-871A-4E02-8829-D370920FDE23}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testfile", "testfile\testfile.vcxproj", "{0F50AB32-8F0F-46F3-9D50-15621E81F270}"
+	ProjectSection(ProjectDependencies) = postProject
+		{851F41CC-871A-4E02-8829-D370920FDE23} = {851F41CC-871A-4E02-8829-D370920FDE23}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

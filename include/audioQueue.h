@@ -81,7 +81,7 @@ inline audioQueue<T>::audioQueue()
         head(0), 
         tail(0), 
         usage(0), 
-        elementCount(0), {}
+        elementCount(0){}
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate, 
@@ -226,9 +226,8 @@ bool audioQueue<T>::push(const             T* ptr,
     const auto estimatedUsage = usage.load() + (temp.size() * 100 / queue.size());
     queueBlocker inputBlocker(1, 0.01, 0.001, 50);
     auto delayTime = - inputBlocker.delayCalculate(estimatedUsage);
-
-    if (estimatedUsage >= 50) 
-        std::this_thread::sleep_for(std::chrono::milliseconds(delayTime));
+    std::print("{}\n", delayTime);
+    std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(delayTime)));
 
     for (const auto i : temp)
     {
@@ -253,9 +252,8 @@ bool audioQueue<T>::pop(                 T* &ptr,
     
     queueBlocker inputBlocker(1, 0.01, 0.001, 50);
     auto delayTime = inputBlocker.delayCalculate(estimatedUsage);
-
-    if (estimatedUsage <= 50) 
-        std::this_thread::sleep_for(std::chrono::milliseconds(delayTime));
+    std::print("{}\n", delayTime);
+    std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(delayTime)));
 
     for (auto i = 0; i < size; i++)
     {   
