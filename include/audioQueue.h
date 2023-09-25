@@ -10,6 +10,8 @@
 #include "samplerate.h"
 #include "sndfile.hh"
 
+#include "queueBlocker.h"
+
 template<typename T>
 concept audioType = std::same_as<T, short> || std::same_as<T, float>;
 
@@ -24,14 +26,8 @@ class audioQueue
   std::atomic<std::  size_t> head;
   std::atomic<std::  size_t> tail;                
   std::atomic<std::  size_t> elementCount;
-
               std::uint32_t  audioSampleRate;
-              std::uint32_t  inputDelay;
-              std::uint32_t  outputDelay;
-
               std:: uint8_t  channelNum;
-              std:: uint8_t  lowerThreshold;
-              std:: uint8_t  upperThreshold; 
   std::atomic<std:: uint8_t> usage;
 
     public : 
@@ -55,10 +51,6 @@ class audioQueue
     inline             void  setSampleRate      (const  std::uint32_t    sRate)                        noexcept     { audioSampleRate = sRate; }
     inline             void  setChannelNum      (const  std:: uint8_t    cNum )                        noexcept     { channelNum = cNum; }
                        void  setCapacity        (const  std::  size_t    newCapacity);                  
-                       void  setDelay           (const  std:: uint8_t    lower,
-                                                 const  std:: uint8_t    upper,
-                                                 const  std::uint32_t    inputDelay,
-                                                 const  std::uint32_t    outputDelay);
 
                
     inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return audioSampleRate; }
@@ -89,11 +81,7 @@ inline audioQueue<T>::audioQueue()
         head(0), 
         tail(0), 
         usage(0), 
-        elementCount(0), 
-        lowerThreshold(0), 
-        upperThreshold(100), 
-        inputDelay(0) , 
-        outputDelay(0){}
+        elementCount(0), {}
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate, 
@@ -105,11 +93,7 @@ inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate,
         head(0), 
         tail(0),
         usage(0),
-        elementCount(0), 
-        lowerThreshold(0), 
-        upperThreshold(100), 
-        inputDelay(45),
-        outputDelay(15){}
+        elementCount(0){}
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(const audioQueue<T> &other)
@@ -120,11 +104,7 @@ inline audioQueue<T>::audioQueue(const audioQueue<T> &other)
     tail.           store(other.tail.load());
     elementCount.   store(other.elementCount.load());
     audioSampleRate = other.audioSampleRate;
-    inputDelay      = other.inputDelay;
-    outputDelay     = other.outputDelay;
     channelNum      = other.channelNum;
-    lowerThreshold  = other.lowerThreshold;
-    upperThreshold  = other.upperThreshold;
     usage.          store(other.usage.load());
 }
 
@@ -136,11 +116,7 @@ inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
     tail.           store(other.tail.load());
     elementCount.   store(other.elementCount.load());
     audioSampleRate = other.audioSampleRate;
-    inputDelay      = other.inputDelay;
-    outputDelay     = other.outputDelay;
     channelNum      = other.channelNum;
-    lowerThreshold  = other.lowerThreshold;
-    upperThreshold  = other.upperThreshold;
     usage.          store(other.usage.load());
 }
 
@@ -248,11 +224,12 @@ bool audioQueue<T>::push(const             T* ptr,
         resample(temp, frames, inputSampleRate);
 
     const auto estimatedUsage = usage.load() + (temp.size() * 100 / queue.size());
+    queueBlocker inputBlocker(1, 0.01, 0.001, 50);
+    auto delayTime = - inputBlocker.delayCalculate(estimatedUsage);
 
-    if (estimatedUsage >= upperThreshold) 
-        std::this_thread::sleep_for(std::chrono::milliseconds(inputDelay));
-    //std::chrono::seconds timeLimit(1);
-    //std::chrono::steady_clock::now();
+    if (estimatedUsage >= 50) 
+        std::this_thread::sleep_for(std::chrono::milliseconds(delayTime));
+
     for (const auto i : temp)
     {
         if (!this->enqueue(i))
@@ -274,8 +251,11 @@ bool audioQueue<T>::pop(                 T* &ptr,
     const auto size = frames * channelNum;
     const auto estimatedUsage = usage.load() >= (size * 100 / queue.size()) ? usage.load() - (size * 100 / queue.size()) : 0;
     
-    if (estimatedUsage <= lowerThreshold) 
-        std::this_thread::sleep_for(std::chrono::milliseconds(outputDelay));
+    queueBlocker inputBlocker(1, 0.01, 0.001, 50);
+    auto delayTime = inputBlocker.delayCalculate(estimatedUsage);
+
+    if (estimatedUsage <= 50) 
+        std::this_thread::sleep_for(std::chrono::milliseconds(delayTime));
 
     for (auto i = 0; i < size; i++)
     {   
@@ -299,23 +279,6 @@ inline void audioQueue<T>::setCapacity(const std::size_t newCapacity)
         if (!this->empty()) this->clear();
         queue.resize(newCapacity);
     }
-}
-
-template<audioType T>
-inline void audioQueue<T>::setDelay(const std:: uint8_t lower, 
-                                    const std:: uint8_t upper, 
-                                    const std::uint32_t inputDelay, 
-                                    const std::uint32_t outputDelay) 
-{
-    auto isInRange = [](const std::uint8_t val) { return val >= 0 && val <= 100; };
-    if (isInRange(lowerThreshold) && isInRange(upperThreshold))
-    {
-        lowerThreshold       = lower;
-        upperThreshold       = upper;
-        this->inputDelay     = inputDelay;
-        this->outputDelay    = outputDelay;
-    }
-    else std::print(stderr,"The upper and lower threshold must between 0% and 100% ! Threshold not set.\n");
 }
 #pragma endregion
 
