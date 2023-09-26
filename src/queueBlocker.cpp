@@ -23,7 +23,6 @@ queueBlocker::queueBlocker(	double kp,
 		target(targetPoint),
 		delay(0){}
 
-
 double queueBlocker::delayCalculate(double value)
 {
 	auto err	=	target - value;

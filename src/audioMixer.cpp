@@ -25,16 +25,12 @@ std::vector<audioQueue<float>> NDIdata;
 std::vector<audioQueue<float>> SNDdata;
 #pragma endregion
 
-#pragma region Error Handlers
 /**
- * @brief Error checker for NDI and PortAudio library.
+ * @brief Error checker PortAudio library.
  * 
  * Exit with failure in case of error.
  */
-template <typename T>
-inline T*	NDIErrorCheck (T*	   ptr){if (!ptr){ std::print("NDI Error: No source is found.\n"); exit(EXIT_FAILURE); } else{ return ptr; }}
 inline void  PAErrorCheck (PaError err){if ( err){ std::print("PortAudio error : {}.\n", Pa_GetErrorText(err)); exit(EXIT_FAILURE);}}
-#pragma endregion
 
 #pragma region NDI Inout
 void NDIAudioTread()
@@ -60,11 +56,13 @@ static int portAudioOutputCallback(	const	void*						inputBuffer,
 {
 	auto out = static_cast<float*>(outputBuffer);
 	memset(out, 0, sizeof(out) * framesPerBuffer);
+	auto outputDelay = 0;
 	for (auto& i : NDIdata)
 	{
+		outputDelay = i.getoutputDelay() > outputDelay ? i.getoutputDelay() : outputDelay;
 		if (!i.empty()) i.pop(out, framesPerBuffer, true);
 	}
-	
+	std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(outputDelay)));
 	
 	return paContinue;
 }
@@ -83,7 +81,6 @@ void portAudioOutputThread()
 										portAudioOutputCallback,// Callback function called
 										nullptr));				// No user data passed
 
-	std::print("paStream started\n");
 	while (!exit_loop)
 	{
 		if (NDIdata.empty()) Pa_StopStream(streamOut);

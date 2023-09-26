@@ -4,11 +4,9 @@
 #include <atomic>
 #include <concepts>
 #include <print>
-#include <thread>
 #include <vector>
 
 #include "samplerate.h"
-#include "sndfile.hh"
 
 #include "queueBlocker.h"
 
@@ -19,26 +17,32 @@ template <audioType T>
 class audioQueue 
 {
     private :
- /* atomic?   Type           Name*/  
+ 
+    inline   static                                     std::uint32_t   queueCount;
 
-              std::vector<T> queue;
+                                                        std::vector<T>  queue;
 
-  std::atomic<std::  size_t> head;
-  std::atomic<std::  size_t> tail;                
-  std::atomic<std::  size_t> elementCount;
-              std::uint32_t  audioSampleRate;
-              std:: uint8_t  channelNum;
-  std::atomic<std:: uint8_t> usage;
+                                            std::atomic<std::  size_t>  head;
+                                            std::atomic<std::  size_t>  tail;                
+                                            std::atomic<std::  size_t>  elementCount;
 
+                                                        std::uint32_t   audioSampleRate;
+    
+                                                        std:: uint8_t   channelNum;
+                                            std::atomic<std:: uint8_t>  usage;
+                                            std::atomic<std:: uint8_t>  inputDelay;
+                                            std::atomic<std:: uint8_t>  outputDelay;
+                                
     public : 
-  /*inline?   Return Type    Function            const? Argument Type    Argument               const? noexcept?     Implementation*/
+  /*inline    Return Type    Function            const  Argument Type    Argument               const  noexcept      Implementation*/
 
                              audioQueue         ();
                              audioQueue         (const  std::uint32_t    sampleRate,
                                                  const  std:: uint8_t    channelNumbers,
                                                  const  std::  size_t    frames);
-                             audioQueue         (const   audioQueue<T>   &other);
-                             audioQueue         (        audioQueue<T>  &&other)                       noexcept;
+                             audioQueue         (const   audioQueue<T>  &other);
+                             audioQueue         (        audioQueue<T> &&other)                        noexcept;
+                            ~audioQueue         ()                                                                  { queueCount--; }
 
                        bool  push               (const              T*   ptr, 
                                                  const  std::  size_t    frames,
@@ -52,11 +56,12 @@ class audioQueue
     inline             void  setChannelNum      (const  std:: uint8_t    cNum )                        noexcept     { channelNum = cNum; }
                        void  setCapacity        (const  std::  size_t    newCapacity);                  
 
-               
-    inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return audioSampleRate; }
-    inline    std:: uint8_t  channels           ()                                              const  noexcept     { return channelNum; }
-    inline    std::  size_t  size               ()                                              const  noexcept     { return elementCount.load(); }
     inline             bool  empty              ()                                              const  noexcept     { return usage.load() == 0; }
+    inline    std::  size_t  size               ()                                              const  noexcept     { return elementCount.load(); }
+    inline    std:: uint8_t  channels           ()                                              const  noexcept     { return channelNum; }
+    inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return audioSampleRate; }
+    inline    std::uint32_t  getInputDelay      ()                                              const  noexcept     { return inputDelay; };
+    inline    std::uint32_t  getoutputDelay     ()                                              const  noexcept     { return outputDelay; };
 
     private :
                        bool  enqueue            (const              T    value);
@@ -81,7 +86,9 @@ inline audioQueue<T>::audioQueue()
         head(0), 
         tail(0), 
         usage(0), 
-        elementCount(0){}
+        elementCount(0),
+        inputDelay(0),
+        outputDelay(0){ queueCount ++; }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate, 
@@ -93,7 +100,9 @@ inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate,
         head(0), 
         tail(0),
         usage(0),
-        elementCount(0){}
+        elementCount(0),
+        inputDelay(0),
+        outputDelay(0){ queueCount ++; }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(const audioQueue<T> &other)
@@ -106,6 +115,9 @@ inline audioQueue<T>::audioQueue(const audioQueue<T> &other)
     audioSampleRate = other.audioSampleRate;
     channelNum      = other.channelNum;
     usage.          store(other.usage.load());
+    inputDelay      = 0;
+    outputDelay     = 0;
+    queueCount      ++;
 }
 
 template<audioType T>
@@ -118,6 +130,8 @@ inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
     audioSampleRate = other.audioSampleRate;
     channelNum      = other.channelNum;
     usage.          store(other.usage.load());
+    inputDelay      = 0;
+    outputDelay     = 0;
 }
 
 
@@ -166,14 +180,9 @@ inline void audioQueue<T>::clear()
 template<audioType T>
 inline void audioQueue<T>::usageRefresh() 
 { 
-    if (queue.size() == 0)
-    {
-        std::print("error : queue size is 0.\n");
-        return;
-    }
+    if (queue.size() == 0) return;
     auto newUsage = static_cast<double>(elementCount.load()) / queue.size() * 100.0;
     usage.store(static_cast<std::uint8_t>(newUsage)); 
-    //std::print("usage : {}\n", usage.load()); 
 }
 
 template<audioType T>
@@ -224,10 +233,19 @@ bool audioQueue<T>::push(const             T* ptr,
         resample(temp, frames, inputSampleRate);
 
     const auto estimatedUsage = usage.load() + (temp.size() * 100 / queue.size());
-    queueBlocker inputBlocker(1, 0.01, 0.001, 50);
-    auto delayTime = - inputBlocker.delayCalculate(estimatedUsage);
-    std::print("{}\n", delayTime);
-    std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(delayTime)));
+    queueBlocker inputBlocker(0.1, 0.1, 0.01, 50);
+    const auto delayCoefficient = 0.5 / queueCount;
+    auto delayTime = static_cast<int>(delayCoefficient * inputBlocker.delayCalculate(estimatedUsage));
+    if (delayTime < 0)
+    {
+        if(-delayTime > inputDelay.load())
+            inputDelay.store(-delayTime);
+    }
+    else
+    {
+        if (delayTime > outputDelay.load())
+            outputDelay.store(delayTime);
+    }
 
     for (const auto i : temp)
     {
@@ -249,11 +267,11 @@ bool audioQueue<T>::pop(                 T* &ptr,
 {
     const auto size = frames * channelNum;
     const auto estimatedUsage = usage.load() >= (size * 100 / queue.size()) ? usage.load() - (size * 100 / queue.size()) : 0;
-    
-    queueBlocker inputBlocker(1, 0.01, 0.001, 50);
-    auto delayTime = inputBlocker.delayCalculate(estimatedUsage);
-    std::print("{}\n", delayTime);
-    std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(delayTime)));
+    queueBlocker inputBlocker(0.1, 0.01, 0.01, 50);
+    const auto delayCoefficient = 4 / queueCount;
+    auto delayTime = static_cast<int>(delayCoefficient * inputBlocker.delayCalculate(estimatedUsage));
+    if (delayTime < 0)  outputDelay.store(-delayTime);
+    else                outputDelay.store( delayTime); 
 
     for (auto i = 0; i < size; i++)
     {   

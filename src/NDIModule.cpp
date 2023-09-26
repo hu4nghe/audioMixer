@@ -33,8 +33,7 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 	{
 		NDIlib_find_wait_for_sources(pNDIFind, NDI_TIMEOUT);
 		pSources = NDIlib_find_get_current_sources(pNDIFind, &NDISourceNum);
-		if (pSources->p_url_address == "192.168.0.200:5961") continue;
-		else found = true;
+		found = true;
 	}
 	NDIErrorCheck(pSources);
 	std::print("NDI sources list:\n");
@@ -43,6 +42,7 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 
 	std::vector<NDIlib_recv_create_v3_t> sourceList;
 	bool sourceMatched = false;
+	bool selectAll = false;
 	std::string url;
 	
 	std::print("Please enter the IP of the source that you want to connect to, enter end to confirm.\n");
@@ -55,11 +55,13 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 			std::print("Sources confimed.\n");
 			break;
 		}
+		else if (url == "all")
+			selectAll = true;
 		else
 		{
 			for (std::size_t i = 0; i < NDISourceNum; i++)
 			{
-				if (url == pSources[i].p_url_address)
+				if (url == pSources[i].p_url_address || selectAll)
 				{
 					NDIlib_recv_create_v3_t NDIRecvCreateDesc;
 					NDIRecvCreateDesc.p_ndi_recv_name = pSources[i].p_ndi_name;
@@ -82,10 +84,13 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 		queueList.push_back(std::move(NDIdata));
 	}
 	
+	auto inputDelay = 0;
+
 	while (true)
 	{
 		for (auto i = 0; i < recvList.size();i++)
 		{
+			inputDelay = queueList[i].getInputDelay() > inputDelay ? queueList[i].getInputDelay() : inputDelay;
 			NDIlib_audio_frame_v2_t audioInput;
 			auto type = NDIlib_recv_capture_v2(recvList[i], nullptr, &audioInput, nullptr,0);
 			if (type == NDIlib_frame_type_none) continue;
@@ -105,6 +110,7 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 			}
 			else continue;
 		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(inputDelay)));
 	}
 
 	NDIlib_find_destroy(pNDIFind);
