@@ -18,7 +18,7 @@ class audioQueue
 {
     private :
  
-    inline   static                                     std::uint32_t   queueCount;
+    inline   static                                     std::uint32_t   queueCount = 0;
 
                                                         std::vector<T>  queue;
 
@@ -42,7 +42,7 @@ class audioQueue
                                                  const  std::  size_t    frames);
                              audioQueue         (const   audioQueue<T>  &other);
                              audioQueue         (        audioQueue<T> &&other)                        noexcept;
-                            ~audioQueue         ()                                                                  { queueCount--; }
+                            ~audioQueue         ()                                                                  { queueCount--; std::print("object dystroyed. total object count : {}\n", queueCount); }
 
                        bool  push               (const              T*   ptr, 
                                                  const  std::  size_t    frames,
@@ -60,8 +60,10 @@ class audioQueue
     inline    std::  size_t  size               ()                                              const  noexcept     { return elementCount.load(); }
     inline    std:: uint8_t  channels           ()                                              const  noexcept     { return channelNum; }
     inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return audioSampleRate; }
-    inline    std::uint32_t  getInputDelay      ()                                              const  noexcept     { return inputDelay; };
-    inline    std::uint32_t  getoutputDelay     ()                                              const  noexcept     { return outputDelay; };
+    inline    std::uint32_t  getInputDelay      ()                                              const  noexcept     { return inputDelay; }
+    inline    std::uint32_t  getoutputDelay     ()                                              const  noexcept     { return outputDelay; }
+
+    static    std::uint32_t  getCount           ()                                                     noexcept     { return queueCount; }
 
     private :
                        bool  enqueue            (const              T    value);
@@ -80,58 +82,61 @@ class audioQueue
 #pragma region Constructors
 template<audioType T>
 inline audioQueue<T>::audioQueue()
-    :   queue(0),  
-        audioSampleRate(0), 
-        channelNum(0),
-        head(0), 
-        tail(0), 
-        usage(0), 
-        elementCount(0),
-        inputDelay(0),
-        outputDelay(0){ queueCount ++; }
+    :   queue           (0),  
+        audioSampleRate (0), 
+        channelNum      (0),
+        head            (0), 
+        tail            (0), 
+        usage           (0), 
+        elementCount    (0),
+        inputDelay      (0),
+        outputDelay     (0){ queueCount ++; std::print("object created by default constructor.total object count : {}\n", queueCount); }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate, 
                                  const std:: uint8_t channelNumbers, 
                                  const std::  size_t frames)
-    :   queue(frames * channelNumbers),
-        audioSampleRate(sampleRate), 
-        channelNum(channelNumbers),
-        head(0), 
-        tail(0),
-        usage(0),
-        elementCount(0),
-        inputDelay(0),
-        outputDelay(0){ queueCount ++; }
+    :   queue           (frames * channelNumbers),
+        audioSampleRate (sampleRate), 
+        channelNum      (channelNumbers),
+        head            (0), 
+        tail            (0),
+        usage           (0),
+        elementCount    (0),
+        inputDelay      (0),
+        outputDelay     (0){ queueCount ++; }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(const audioQueue<T> &other)
+    :
+        queue           (other.queue),
+        head            (other.head.load()),
+        tail            (other.tail.load()),
+        elementCount    (other.elementCount.load()),
+        audioSampleRate (other.audioSampleRate),
+        channelNum      (other.channelNum),
+        usage           (other.usage.load()),
+        inputDelay      (0),
+        outputDelay     (0)
 {
-   
-    queue           = other.queue;
-    head.           store(other.head.load());
-    tail.           store(other.tail.load());
-    elementCount.   store(other.elementCount.load());
-    audioSampleRate = other.audioSampleRate;
-    channelNum      = other.channelNum;
-    usage.          store(other.usage.load());
-    inputDelay      = 0;
-    outputDelay     = 0;
     queueCount      ++;
+    std::print("object created by copy constructor.total object count : {}\n", queueCount);
 }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
+    :
+        queue           (std::move(other.queue)),
+        head            (other.head.load()),
+        tail            (other.tail.load()),
+        elementCount    (other.elementCount.load()),
+        audioSampleRate (other.audioSampleRate),
+        channelNum      (other.channelNum),
+        usage           (other.usage.load()),
+        inputDelay      (0),
+        outputDelay     (0)
 {
-    queue           = std::move(other.queue);
-    head.           store(other.head.load());
-    tail.           store(other.tail.load());
-    elementCount.   store(other.elementCount.load());
-    audioSampleRate = other.audioSampleRate;
-    channelNum      = other.channelNum;
-    usage.          store(other.usage.load());
-    inputDelay      = 0;
-    outputDelay     = 0;
+    std::print("object moved by move constructor. total object count : {}\n", queueCount);
 }
 
 

@@ -26,7 +26,7 @@ queueBlocker::queueBlocker(	double kp,
 double queueBlocker::delayCalculate(double value)
 {
 	auto err	=	target - value;
-	integral	+=	target;
+	integral	+=	value;
 	derivative	=	err - prevErr;
 	auto delay	=	Kp * err + Ki * integral + Kd * derivative;
 	prevErr		=	err;
