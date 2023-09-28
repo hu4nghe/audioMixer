@@ -59,10 +59,10 @@ static int portAudioOutputCallback(	const	void*						inputBuffer,
 	auto outputDelay = 0;
 	for (auto& i : NDIdata)
 	{
-		//outputDelay = i.getoutputDelay() > outputDelay ? i.getoutputDelay() : outputDelay;
+		outputDelay = i.getoutputDelay() > outputDelay ? i.getoutputDelay() : outputDelay;
 		if (!i.empty()) i.pop(out, framesPerBuffer, true);
 	}
-	//std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(outputDelay)));
+	std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(outputDelay)));
 	
 	return paContinue;
 }

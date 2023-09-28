@@ -107,21 +107,17 @@ inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate,
         outputDelay     (0){ queueCount ++; }
 
 template<audioType T>
-inline audioQueue<T>::audioQueue(const audioQueue<T> &other)
+inline audioQueue<T>::audioQueue(const audioQueue<T>& other)
     :
-        queue           (other.queue),
-        head            (other.head.load()),
-        tail            (other.tail.load()),
-        elementCount    (other.elementCount.load()),
-        audioSampleRate (other.audioSampleRate),
-        channelNum      (other.channelNum),
-        usage           (other.usage.load()),
-        inputDelay      (0),
-        outputDelay     (0)
-{
-    queueCount      ++;
-    std::print("object created by copy constructor.total object count : {}\n", queueCount);
-}
+        queue(other.queue),
+        head(other.head.load()),
+        tail(other.tail.load()),
+        elementCount(other.elementCount.load()),
+        audioSampleRate(other.audioSampleRate),
+        channelNum(other.channelNum),
+        usage(other.usage.load()),
+        inputDelay(0),
+        outputDelay(0){ queueCount++; }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
@@ -134,10 +130,7 @@ inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
         channelNum      (other.channelNum),
         usage           (other.usage.load()),
         inputDelay      (0),
-        outputDelay     (0)
-{
-    std::print("object moved by move constructor. total object count : {}\n", queueCount);
-}
+        outputDelay     (0){ queueCount++; }
 
 
 #pragma endregion
