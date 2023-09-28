@@ -109,15 +109,15 @@ inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate,
 template<audioType T>
 inline audioQueue<T>::audioQueue(const audioQueue<T>& other)
     :
-        queue(other.queue),
-        head(other.head.load()),
-        tail(other.tail.load()),
-        elementCount(other.elementCount.load()),
-        audioSampleRate(other.audioSampleRate),
-        channelNum(other.channelNum),
-        usage(other.usage.load()),
-        inputDelay(0),
-        outputDelay(0){ queueCount++; }
+        queue           (other.queue),
+        head            (other.head.load()),
+        tail            (other.tail.load()),
+        elementCount    (other.elementCount.load()),
+        audioSampleRate (other.audioSampleRate),
+        channelNum      (other.channelNum),
+        usage           (other.usage.load()),
+        inputDelay      (0),
+        outputDelay     (0){ queueCount++; }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
