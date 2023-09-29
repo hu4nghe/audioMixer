@@ -90,7 +90,7 @@ inline audioQueue<T>::audioQueue()
         usage           (0), 
         elementCount    (0),
         inputDelay      (0),
-        outputDelay     (0){ queueCount ++; std::print("object created by default constructor.total object count : {}\n", queueCount); }
+        outputDelay     (0){ queueCount ++; }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate, 

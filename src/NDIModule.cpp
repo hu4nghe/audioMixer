@@ -86,6 +86,7 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 	
 	auto inputDelay = 0;
 
+
 	while (true)
 	{
 		for (auto i = 0; i < recvList.size();i++)
