@@ -85,15 +85,13 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 	}
 	
 	auto inputDelay = 0;
-
-
 	while (true)
 	{
-		for (auto i = 0; i < recvList.size();i++)
+		for (auto i = 0; i < recvList.size(); i++)
 		{
 			inputDelay = queueList[i].getInputDelay() > inputDelay ? queueList[i].getInputDelay() : inputDelay;
 			NDIlib_audio_frame_v2_t audioInput;
-			auto type = NDIlib_recv_capture_v2(recvList[i], nullptr, &audioInput, nullptr,0);
+			auto type = NDIlib_recv_capture_v2(recvList[i], nullptr, &audioInput, nullptr, 0);
 			if (type == NDIlib_frame_type_none) continue;
 			if (type == NDIlib_frame_type_audio)
 			{
@@ -112,6 +110,7 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 			else continue;
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(inputDelay)));
+		std::print("{}\n", inputDelay);
 	}
 
 	NDIlib_find_destroy(pNDIFind);

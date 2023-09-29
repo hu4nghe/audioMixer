@@ -63,7 +63,7 @@ static int portAudioOutputCallback(	const	void*						inputBuffer,
 		if (!i.empty()) i.pop(out, framesPerBuffer, true);
 	}
 	std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(outputDelay)));
-	
+	std::print("{}\n", outputDelay);
 	return paContinue;
 }
 

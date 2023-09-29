@@ -42,7 +42,7 @@ class audioQueue
                                                  const  std::  size_t    frames);
                              audioQueue         (const   audioQueue<T>  &other);
                              audioQueue         (        audioQueue<T> &&other)                        noexcept;
-                            ~audioQueue         ()                                                                  { queueCount--; std::print("object dystroyed. total object count : {}\n", queueCount); }
+                            ~audioQueue         ()                                                                  { queueCount--; }
 
                        bool  push               (const              T*   ptr, 
                                                  const  std::  size_t    frames,
