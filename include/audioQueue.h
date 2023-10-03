@@ -29,16 +29,16 @@ class audioQueue
                                                         std::uint32_t   audioSampleRate;
     
                                                         std:: uint8_t   channelNum;
+                                                        std:: uint8_t   bufferMin;
                                             std::atomic<std:: uint8_t>  usage;
-                                            std::atomic<std:: uint8_t>  inputDelay;
-                                            std::atomic<std:: uint8_t>  outputDelay;
+                                                        
                                 
     public : 
   /*inline    Return Type    Function            const  Argument Type    Argument               const  noexcept      Implementation*/
 
                              audioQueue         ();
                              audioQueue         (const  std::uint32_t    sampleRate,
-                                                 const  std:: uint8_t    channelNumbers,
+                                                 const  std:: uint8_t    channelNumbers              ,
                                                  const  std::  size_t    frames);
                              audioQueue         (const   audioQueue<T>  &other);
                              audioQueue         (        audioQueue<T> &&other)                        noexcept;
@@ -46,22 +46,20 @@ class audioQueue
 
                        bool  push               (const              T*   ptr, 
                                                  const  std::  size_t    frames,
-                                                 const  std:: uint8_t    outputChannelNum,
-                                                 const  std::uint32_t    outputSampleRate);
+                                                 const  std:: uint8_t  inputChannelNum,
+                                                 const  std::uint32_t  inputSampleRate);
                        bool  pop                (                   T*  &ptr, 
                                                  const  std::  size_t    frames,
                                                  const           bool    mode);
 
-    inline             void  setSampleRate      (const  std::uint32_t    sRate)                        noexcept     { audioSampleRate = sRate; }
-    inline             void  setChannelNum      (const  std:: uint8_t    cNum )                        noexcept     { channelNum = cNum; }
+    inline             void  setSampleRate      (const  std::uint32_t    newSampleRate)                noexcept     { audioSampleRate = newSampleRate; }
+    inline             void  setChannelNum      (const  std:: uint8_t    newChannelNum )               noexcept     { channelNum      = newChannelNum; }
                        void  setCapacity        (const  std::  size_t    newCapacity);                  
 
-    inline             bool  empty              ()                                              const  noexcept     { return usage.load() == 0; }
-    inline    std::  size_t  size               ()                                              const  noexcept     { return elementCount.load(); }
-    inline    std:: uint8_t  channels           ()                                              const  noexcept     { return channelNum; }
-    inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return audioSampleRate; }
-    inline    std::uint32_t  getInputDelay      ()                                              const  noexcept     { return inputDelay; }
-    inline    std::uint32_t  getoutputDelay     ()                                              const  noexcept     { return outputDelay; }
+    inline             bool  empty              ()                                              const               { return usage.load() == 0; }
+    inline    std::  size_t  size               ()                                              const               { return elementCount.load(); }
+    inline    std:: uint8_t  channels           ()                                              const               { return channelNum; }
+    inline    std::uint32_t  sampleRate         ()                                              const               { return audioSampleRate; }
 
     static    std::uint32_t  getCount           ()                                                     noexcept     { return queueCount; }
 
@@ -89,8 +87,7 @@ inline audioQueue<T>::audioQueue()
         tail            (0), 
         usage           (0), 
         elementCount    (0),
-        inputDelay      (0),
-        outputDelay     (0){ queueCount ++; }
+        bufferMin       (0) { queueCount ++; }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate, 
@@ -103,8 +100,7 @@ inline audioQueue<T>::audioQueue(const std::uint32_t sampleRate,
         tail            (0),
         usage           (0),
         elementCount    (0),
-        inputDelay      (0),
-        outputDelay     (0){ queueCount ++; }
+        bufferMin       (0) { queueCount++; }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(const audioQueue<T>& other)
@@ -116,8 +112,7 @@ inline audioQueue<T>::audioQueue(const audioQueue<T>& other)
         audioSampleRate (other.audioSampleRate),
         channelNum      (other.channelNum),
         usage           (other.usage.load()),
-        inputDelay      (0),
-        outputDelay     (0){ queueCount++; }
+        bufferMin       (other.bufferMin) { queueCount++; }
 
 template<audioType T>
 inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
@@ -129,8 +124,7 @@ inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
         audioSampleRate (other.audioSampleRate),
         channelNum      (other.channelNum),
         usage           (other.usage.load()),
-        inputDelay      (0),
-        outputDelay     (0){ queueCount++; }
+        bufferMin       (other.bufferMin){ queueCount++; }
 
 
 #pragma endregion
@@ -144,7 +138,7 @@ bool audioQueue<T>::enqueue(const T value)
 
     if (nextTail == head.load(std::memory_order_acquire)) 
         return false; // Queue is full
-
+     
     queue[currentTail] = value;
     tail        .store      (nextTail, std::memory_order_release);
     elementCount.fetch_add  (       1, std::memory_order_relaxed);
@@ -204,8 +198,8 @@ void audioQueue<T>::resample(      std::vector<T> &data,
     srcData.src_ratio     = resampleRatio;
 
     src_process(srcState, &srcData);
-    src_delete(srcState);
-    
+    src_delete (srcState);
+
     data = std::move(temp);
 }
 
