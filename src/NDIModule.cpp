@@ -46,7 +46,7 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 	std::string url;
 	
 	std::print("Please enter the IP of the source that you want to connect to, enter end to confirm.\n");
-	do
+	do  
 	{
 		sourceMatched = false;
 		std::cin >> url;
@@ -89,7 +89,6 @@ void NDIAudioReceive(std::vector<audioQueue<float>> &queueList, int PA_SAMPLE_RA
 	{
 		for (auto i = 0; i < recvList.size(); i++)
 		{
-			inputDelay = queueList[i].getInputDelay() > inputDelay ? queueList[i].getInputDelay() : inputDelay;
 			NDIlib_audio_frame_v2_t audioInput;
 			auto type = NDIlib_recv_capture_v2(recvList[i], nullptr, &audioInput, nullptr, 0);
 			if (type == NDIlib_frame_type_none) continue;
