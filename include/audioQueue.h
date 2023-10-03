@@ -139,7 +139,7 @@ inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
 template<audioType T>
 bool audioQueue<T>::enqueue(const T value)
 {
-    auto currentTail = tail.load(std::memory_order_relaxed);
+    auto currentTail = tail.load(std::memory_order_release);
     auto nextTail    = (currentTail + 1) % queue.size();
 
     if (nextTail == head.load(std::memory_order_acquire)) 
@@ -155,7 +155,7 @@ template<audioType T>
 bool audioQueue<T>::dequeue(         T &value, 
                             const bool  mode)
 {
-    auto currentHead =  head.load(std::memory_order_relaxed);
+    auto currentHead =  head.load(std::memory_order_release);
 
     if ( currentHead == tail.load(std::memory_order_acquire)) 
         return false; // Queue is empty
@@ -178,7 +178,8 @@ inline void audioQueue<T>::clear()
 template<audioType T>
 inline void audioQueue<T>::usageRefresh() 
 { 
-    if (queue.size() == 0) return;
+    if (queue.size() == 0) 
+        return;
     auto newUsage = static_cast<double>(elementCount.load()) / queue.size() * 100.0;
     usage.store(static_cast<std::uint8_t>(newUsage)); 
 }
@@ -290,7 +291,8 @@ inline void audioQueue<T>::setCapacity(const std::size_t newCapacity)
     if (newCapacity == queue.size()) return;
     else
     {
-        if (!this->empty()) this->clear();
+        if (!this->empty()) 
+            this->clear();
         queue.resize(newCapacity);
     }
 }
