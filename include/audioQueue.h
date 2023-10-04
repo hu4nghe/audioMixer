@@ -68,9 +68,6 @@ class audioQueue
                        void  resample           (       std::vector<T>  &data,
                                                  const  std::  size_t    frames,
                                                  const  std::uint32_t    inputSampleRate);
-                       void  channelConversion  (       std::vector<T>  &data,
-                                                 const  std:: uint8_t    inputChannelNum);
-                       
 };
 
 #pragma region Constructors
@@ -205,10 +202,6 @@ void audioQueue<T>::resample           (      std::vector<T>  &data,
 
     data = std::move(temp);
 }
-
-template<audioType T>
-void audioQueue<T>::channelConversion  (      std::vector<T>  &data, 
-                                        const std:: uint8_t    inputChannelNum){}
 #pragma endregion
 
 #pragma region Public APIs
