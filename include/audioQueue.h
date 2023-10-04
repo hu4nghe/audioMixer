@@ -8,8 +8,6 @@
 
 #include "samplerate.h"
 
-#include "queueBlocker.h"
-
 template<typename T>
 concept audioType = std::same_as<T, short> || std::same_as<T, float>;
 
@@ -46,7 +44,6 @@ class audioQueue
 
                        bool  push               (const              T*   ptr, 
                                                  const  std::  size_t    frames,
-                                                 const  std:: uint8_t  inputChannelNum,
                                                  const  std::uint32_t  inputSampleRate);
                        bool  pop                (                   T*  &ptr, 
                                                  const  std::  size_t    frames,
@@ -133,7 +130,7 @@ inline audioQueue<T>::audioQueue(audioQueue<T> &&other) noexcept
 template<audioType T>
 bool audioQueue<T>::enqueue(const T value)
 {
-    auto currentTail = tail.load(std::memory_order_release);
+    auto currentTail = tail.load(std::memory_order_acquire);
     auto nextTail    = (currentTail + 1) % queue.size();
 
     if (nextTail == head.load(std::memory_order_acquire)) 
@@ -149,7 +146,7 @@ template<audioType T>
 bool audioQueue<T>::dequeue(         T &value, 
                             const bool  mode)
 {
-    auto currentHead =  head.load(std::memory_order_release);
+    auto currentHead =  head.load(std::memory_order_acquire);
 
     if ( currentHead == tail.load(std::memory_order_acquire)) 
         return false; // Queue is empty
@@ -212,39 +209,22 @@ void audioQueue<T>::channelConversion(      std::vector<T> &data,
 template<audioType T>
 bool audioQueue<T>::push(const             T* ptr, 
                          const std::  size_t  frames, 
-                         const std:: uint8_t  inputChannelNum, 
                          const std::uint32_t  inputSampleRate)
 {
-    const bool needChannelConversion    = (inputChannelNum != channelNum);
-    const bool needResample             = (inputSampleRate != audioSampleRate);
-    const auto currentSize              = frames * inputChannelNum;
+    const bool needResample = (inputSampleRate != audioSampleRate);
+    const auto currentSize  = frames * inputChannelNum;
 
     std::vector<T> temp(ptr, ptr + currentSize);
-    /*if (needChannelConversion)
-        channelConversion(temp, ChannelNum);*/
+
     if (needResample)
         resample(temp, frames, inputSampleRate);
 
     const auto estimatedUsage = usage.load() + (temp.size() * 100 / queue.size());
-    queueBlocker inputBlocker(0.1, 0.1, 0.01, 50);
-    const auto delayCoefficient = 0.5 / queueCount;
-    auto delayTime = static_cast<int>(delayCoefficient * inputBlocker.delayCalculate(estimatedUsage));
-    if (delayTime < 0)
-    {
-        if(-delayTime > inputDelay.load())
-            inputDelay.store(-delayTime);
-    }
-    else
-    {
-        if (delayTime > outputDelay.load())
-            outputDelay.store(delayTime);
-    }
-
+    
     for (const auto i : temp)
     {
         if (!this->enqueue(i))
         {
-            std::print(stderr,"push aborted, no enough space.\n");
             usageRefresh();
             return false;
         }
@@ -260,17 +240,11 @@ bool audioQueue<T>::pop(                 T* &ptr,
 {
     const auto size = frames * channelNum;
     const auto estimatedUsage = usage.load() >= (size * 100 / queue.size()) ? usage.load() - (size * 100 / queue.size()) : 0;
-    queueBlocker inputBlocker(0.1, 0.01, 0.01, 50);
-    const auto delayCoefficient = 4 / queueCount;
-    auto delayTime = static_cast<int>(delayCoefficient * inputBlocker.delayCalculate(estimatedUsage));
-    if (delayTime < 0)  outputDelay.store(-delayTime);
-    else                outputDelay.store( delayTime); 
 
     for (auto i = 0; i < size; i++)
     {   
         if (!this->dequeue(ptr[i],mode)) 
         {
-           std::print(stderr,"pop aborted, no enough element in queue.\n");
            usageRefresh();
            return false;
         }
