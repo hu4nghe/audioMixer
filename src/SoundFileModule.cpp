@@ -50,7 +50,7 @@ void sndfileReceive(std::vector<audioQueue<float>>&queueList, int PA_SAMPLE_RATE
 		i.read(temp, bufferSize);
 
 		audioQueue<float> sndQueue(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, bufferSize);
-		sndQueue.push(temp, i.frames(),i.channels(), i.samplerate());
+		sndQueue.push(temp, i.frames(), i.samplerate());
 		delete[] temp;
 
 		queueList.push_back(std::move(sndQueue));		

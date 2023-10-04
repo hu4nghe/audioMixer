@@ -1,9 +1,9 @@
 ﻿#include <csignal>
 #include <iostream>
+
 #include "NDIModule.h" 
 #include "portaudio.h"
 #include "audioQueue.h"
-#include "SoundFileModule.h"
 
 #pragma region System signal handler
 /**
@@ -16,7 +16,7 @@ static void sigIntHandler(int) {exit_loop = true;}
 #pragma endregion
 
 #pragma region Global constants and variables
-constexpr auto PA_SAMPLE_RATE				= 48000;
+constexpr auto PA_SAMPLE_RATE				= 96000;
 constexpr auto PA_BUFFER_SIZE				= 512;
 constexpr auto PA_INPUT_CHANNELS			= 0;
 constexpr auto PA_OUTPUT_CHANNELS			= 2;
@@ -47,17 +47,15 @@ void sndfileRead()
 #pragma endregion
 
 #pragma region PA output
-static int portAudioOutputCallback(	const	void*						inputBuffer,
-											void*						outputBuffer,
-											unsigned long				framesPerBuffer,
+static int portAudioOutputCallback(	const	                    void*	inputBuffer,
+											                    void*	outputBuffer,
+											           unsigned long	framesPerBuffer,
 									const	PaStreamCallbackTimeInfo*	timeInfo,
 											PaStreamCallbackFlags		statusFlags,
-											void*						UserData)
+											                    void*	UserData)
 {
 	auto out = static_cast<float*>(outputBuffer);
 	memset(out, 0, sizeof(out) * framesPerBuffer);
-
-	auto outputDelay = 0;
 	for (auto& i : NDIdata)
 		if (!i.empty()) i.pop(out, framesPerBuffer, true);
 	return paContinue;
@@ -68,21 +66,20 @@ void portAudioOutputThread()
 	std::signal(SIGINT, sigIntHandler);
 
 	PaStream* streamOut;
-	PAErrorCheck(Pa_OpenDefaultStream( &streamOut,				// PortAudio Stream
+	PAErrorCheck(Pa_OpenDefaultStream( &streamOut,
 										PA_INPUT_CHANNELS,				
 										PA_OUTPUT_CHANNELS,				
 										PA_FORMAT,						
 										PA_SAMPLE_RATE,					
 										PA_BUFFER_SIZE,					
-										portAudioOutputCallback,// Callback function called
-										nullptr));				// No user data passed
+										portAudioOutputCallback,
+										nullptr));
 
 	while (!exit_loop)
 	{
-		if (NDIdata.empty()) Pa_StopStream(streamOut);
+		if ( NDIdata.empty()) Pa_StopStream (streamOut);
 		if (!NDIdata.empty()) Pa_StartStream(streamOut);
 	}
-
 	PAErrorCheck(Pa_StopStream(streamOut));
 	PAErrorCheck(Pa_CloseStream(streamOut));
 }
