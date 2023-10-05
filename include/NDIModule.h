@@ -4,8 +4,6 @@
 #include "audioQueue.h"
 #include "Processing.NDI.Lib.h"
 
-//void NDIAudioReceive(std::vector<audioQueue<float>>& queueList, std::uint32_t PA_SAMPLE_RATE, std::uint32_t PA_OUTPUT_CHANNELS);
-
 class NDIAudioSourceList
 {
 	public:

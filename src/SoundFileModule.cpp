@@ -5,6 +5,8 @@
 
 namespace fs = std::filesystem;
 
+
+
 void sndfileReceive(std::vector<audioQueue<float>>&queueList, int PA_SAMPLE_RATE, int PA_OUTPUT_CHANNELS)
 {
 	std::vector<fs::path> pathList;
@@ -33,7 +35,7 @@ void sndfileReceive(std::vector<audioQueue<float>>&queueList, int PA_SAMPLE_RATE
 			}
 
 		}
-		 
+
 	} while (true);
 
 	std::vector<SndfileHandle> fileHandleList;
@@ -56,4 +58,46 @@ void sndfileReceive(std::vector<audioQueue<float>>&queueList, int PA_SAMPLE_RATE
 		queueList.push_back(std::move(sndQueue));		
 	}
 	return;
+}
+
+sndfileInputList::sndfileInputList()
+{
+}
+
+sndfileInputList::~sndfileInputList()
+{
+}
+
+bool sndfileInputList::readAudioFile(std::vector<audioQueue<float>>& queue, const std::uint32_t PA_SAMPLE_RATE, const std::uint32_t PA_OUTPUT_CHANNELS)
+{
+	std::vector<fs::path> pathList;
+	std::print("Sndfile: Please enter the path of the sound file, enter end to confirm.");
+	std::string filePathStr;
+	do
+	{
+		std::getline(std::cin >> std::ws, filePathStr);
+		if (filePathStr == "end")
+		{
+			std::print("Sound files confimed.\n");
+			break;
+		}
+		else
+		{
+			fs::path filePath(filePathStr);
+			if (fs::exists(filePath))
+			{
+				std::print("Error : No such file or dictory.\n");
+				continue;
+			}
+			else
+			{
+				std::print("Sound file seletcted : {}.\n", filePath.filename().string());
+				pathList.push_back(std::move(filePath));
+			}
+
+		}
+
+	} while (true);
+	
+	return false;
 }

@@ -40,6 +40,11 @@ inline void  PAErrorCheck (PaError err)
 	} 
 }
 
+void channelAdaption(int originalChannel, int outputChannel)
+{
+
+}
+
 #pragma region NDI Inout
 void NDIAudioTread()
 {
@@ -98,6 +103,7 @@ void portAudioOutputThread()
 	PAErrorCheck(Pa_CloseStream(streamOut));
 }
 #pragma endregion
+
 int main()
 {
 	PAErrorCheck(Pa_Initialize());

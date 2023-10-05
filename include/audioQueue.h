@@ -16,23 +16,21 @@ class audioQueue
 {
     private :
  
-    inline   static                                     std::uint32_t   queueCount = 0;
+    inline   static                                     std::uint32_t    queueCount = 0;
 
-                                                        std::vector<T>  queue;
+                                                        std::vector<T>   queue;
 
-                                            std::atomic<std::  size_t>  head;
-                                            std::atomic<std::  size_t>  tail;                
-                                            std::atomic<std::  size_t>  elementCount;
+                                            std::atomic<std::  size_t>   head;
+                                            std::atomic<std::  size_t>   tail;                
+                                            std::atomic<std::  size_t>   elementCount;
 
-                                                        std::uint32_t   outputSampleRate;
+                                                        std::uint32_t    outputSampleRate;
     
-                                                        std:: uint8_t   channelNum;
-                                                        std:: uint8_t   bufferMin;
-                                            std::atomic<std:: uint8_t>  usage;
+                                                        std:: uint8_t    channelNum;
+                                                        std:: uint8_t    bufferMin;
                                                         
                                 
     public : 
-
                              audioQueue         ();
                              audioQueue         (const  std::uint32_t    sampleRate,
                                                  const  std:: uint8_t    channelNumbers,
@@ -41,18 +39,18 @@ class audioQueue
                              audioQueue         (        audioQueue<T>&& other)                        noexcept;
                             ~audioQueue         ()                                                     noexcept     { queueCount--; }
 
-                       bool  push               (const              T*   ptr, 
+                       bool  push               (const              T*   ptr,
                                                  const  std::  size_t    frames,
                                                  const  std::uint32_t    inputSampleRate);
-                       bool  pop                (                   T*&  ptr, 
+                       bool  pop                (                   T*&  ptr,
                                                  const  std::  size_t    frames,
                                                  const           bool    mode);
 
     inline             void  setSampleRate      (const  std::uint32_t    newSampleRate)                noexcept     { outputSampleRate = newSampleRate; }
-    inline             void  setChannelNum      (const  std:: uint8_t    newChannelNum )               noexcept     { channelNum      = newChannelNum; }
-                       void  setCapacity        (const  std::  size_t    newCapacity);                  
+    inline             void  setChannelNum      (const  std:: uint8_t    newChannelNum )               noexcept     { channelNum       = newChannelNum; }
+                       void  setCapacity        (const  std::  size_t    newCapacity);
 
-    inline             bool  empty              ()                                              const  noexcept     { return usage.load() == 0; }
+    inline             bool  empty              ()                                              const  noexcept     { return !elementCount.load(); }
     inline    std::  size_t  size               ()                                              const  noexcept     { return elementCount.load(); }
     inline    std:: uint8_t  channels           ()                                              const  noexcept     { return channelNum; }
     inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return outputSampleRate; }
@@ -63,7 +61,6 @@ class audioQueue
                        bool  dequeue            (                   T&   value,
                                                  const           bool    mode);
                        void  clear              ();
-                       void  usageRefresh       (); 
                        void  resample           (       std::vector<T>&  data,
                                                  const  std::  size_t    frames,
                                                  const  std::uint32_t    inputSampleRate);
@@ -77,21 +74,19 @@ audioQueue<T>::audioQueue()
         channelNum       (0),
         head             (0), 
         tail             (0), 
-        usage            (0), 
         elementCount     (0),
         bufferMin        (0) 
-        { queueCount ++; }
+        { queueCount++; }
 
 template<audioType T>
-audioQueue<T>::audioQueue              (const std::uint32_t   sampleRate, 
-                                        const std:: uint8_t   channelNumbers, 
-                                        const std::  size_t   bufferMax)
+audioQueue<T>::audioQueue              (const std::uint32_t    sampleRate, 
+                                        const std:: uint8_t    channelNumbers, 
+                                        const std::  size_t    bufferMax)
     :   queue            (bufferMax * channelNumbers),
         outputSampleRate (sampleRate), 
         channelNum       (channelNumbers),
         head             (0), 
         tail             (0),
-        usage            (0),
         elementCount     (0),
         bufferMin        (0) 
         { queueCount++; }
@@ -105,7 +100,6 @@ audioQueue<T>::audioQueue              (const  audioQueue<T>&  other)
         elementCount     (other.elementCount.load()),
         outputSampleRate (other.outputSampleRate),
         channelNum       (other.channelNum),
-        usage            (other.usage.load()),
         bufferMin        (other.bufferMin) 
         { queueCount++; }
 
@@ -118,7 +112,6 @@ audioQueue<T>::audioQueue              (       audioQueue<T>&& other) noexcept
         elementCount     (other.elementCount.load()),
         outputSampleRate (other.outputSampleRate),
         channelNum       (other.channelNum),
-        usage            (other.usage.load()),
         bufferMin        (other.bufferMin)
         { queueCount++; }
 
@@ -169,14 +162,6 @@ void audioQueue<T>::clear              ()
 }
 
 template<audioType T>
-void audioQueue<T>::usageRefresh       () 
-{ 
-    if (queue.size() == 0) return;
-    auto newUsage = static_cast<double>(elementCount.load()) / queue.size() * 100.0;
-    usage.store(static_cast<std::uint8_t>(newUsage)); 
-}
-
-template<audioType T>
 void audioQueue<T>::resample           (      std::vector<T>  &data, 
                                         const std::  size_t    frames, 
                                         const std::uint32_t    inputSampleRate)
@@ -220,11 +205,9 @@ bool audioQueue<T>::push               (const             T*   ptr,
         if (!this->enqueue(i))
         {
             std::print("push error\n");
-            usageRefresh();
             return false;
         }
     }
-    usageRefresh();
     return true;
 }
 
@@ -239,11 +222,9 @@ bool audioQueue<T>::pop                (                  T*&  ptr,
         if (!this->dequeue(ptr[i],mode)) 
         {
             std::print("pop error\n");
-            usageRefresh();
             return false;
         }
     }
-    usageRefresh();
     return true;
 }
 
