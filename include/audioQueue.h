@@ -37,14 +37,14 @@ class audioQueue
                              audioQueue         (const  std::uint32_t    sampleRate,
                                                  const  std:: uint8_t    channelNumbers,
                                                  const  std::  size_t    bufferMax);
-                             audioQueue         (const   audioQueue<T>  &other);
-                             audioQueue         (        audioQueue<T> &&other)                        noexcept;
+                             audioQueue         (const   audioQueue<T>&  other);
+                             audioQueue         (        audioQueue<T>&& other)                        noexcept;
                             ~audioQueue         ()                                                     noexcept     { queueCount--; }
 
                        bool  push               (const              T*   ptr, 
                                                  const  std::  size_t    frames,
                                                  const  std::uint32_t    inputSampleRate);
-                       bool  pop                (                   T*  &ptr, 
+                       bool  pop                (                   T*&  ptr, 
                                                  const  std::  size_t    frames,
                                                  const           bool    mode);
 
@@ -60,11 +60,11 @@ class audioQueue
 
     private :
                        bool  enqueue            (const              T    value);
-                       bool  dequeue            (                   T   &value,
+                       bool  dequeue            (                   T&   value,
                                                  const           bool    mode);
                        void  clear              ();
                        void  usageRefresh       (); 
-                       void  resample           (       std::vector<T>  &data,
+                       void  resample           (       std::vector<T>&  data,
                                                  const  std::  size_t    frames,
                                                  const  std::uint32_t    inputSampleRate);
 };
@@ -97,7 +97,7 @@ audioQueue<T>::audioQueue              (const std::uint32_t   sampleRate,
         { queueCount++; }
 
 template<audioType T>
-audioQueue<T>::audioQueue              (const  audioQueue<T>  &other)
+audioQueue<T>::audioQueue              (const  audioQueue<T>&  other)
     :
         queue            (other.queue),
         head             (other.head.load()),
@@ -110,7 +110,7 @@ audioQueue<T>::audioQueue              (const  audioQueue<T>  &other)
         { queueCount++; }
 
 template<audioType T>
-audioQueue<T>::audioQueue              (       audioQueue<T> &&other) noexcept
+audioQueue<T>::audioQueue              (       audioQueue<T>&& other) noexcept
     :
         queue            (std::move(other.queue)),
         head             (other.head.load()),
@@ -143,7 +143,7 @@ bool audioQueue<T>::enqueue            (const             T    value)
 }
 
 template<audioType T>
-bool audioQueue<T>::dequeue            (                  T   &value, 
+bool audioQueue<T>::dequeue            (                  T&   value, 
                                         const          bool    mode)
 {
     auto currentHead =  head.load(std::memory_order_acquire);
@@ -229,7 +229,7 @@ bool audioQueue<T>::push               (const             T*   ptr,
 }
 
 template<audioType T>
-bool audioQueue<T>::pop                (                  T*  &ptr, 
+bool audioQueue<T>::pop                (                  T*&  ptr, 
                                         const std::  size_t    frames,
                                         const          bool    mode)
 {
@@ -239,8 +239,8 @@ bool audioQueue<T>::pop                (                  T*  &ptr,
         if (!this->dequeue(ptr[i],mode)) 
         {
             std::print("pop error\n");
-           usageRefresh();
-           return false;
+            usageRefresh();
+            return false;
         }
     }
     usageRefresh();

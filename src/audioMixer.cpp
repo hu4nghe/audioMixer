@@ -12,17 +12,18 @@
  * Let exit_loop = true if a system signal is received.
  */
 static std::atomic<bool> exit_loop(false);
-static void sigIntHandler(int) {exit_loop = true;}
+static void sigIntHandler(int) { exit_loop = true; }
 #pragma endregion
 
 #pragma region Global constants and variables
-constexpr auto PA_SAMPLE_RATE				= 96000;
-constexpr auto PA_BUFFER_SIZE				= 512;
+constexpr auto PA_SAMPLE_RATE				= 44100;
+constexpr auto PA_BUFFER_SIZE				= 441;
 constexpr auto PA_INPUT_CHANNELS			= 0;
 constexpr auto PA_OUTPUT_CHANNELS			= 2;
 constexpr auto PA_FORMAT					= paFloat32;
+constexpr auto AUDIOQUEUE_BUFFER_MAX		= 441000;
 std::vector<audioQueue<float>> NDIdata;
-std::vector<audioQueue<float>> SNDdata;
+//std::vector<audioQueue<float>> SNDdata;
 #pragma endregion
 
 /**
@@ -30,12 +31,25 @@ std::vector<audioQueue<float>> SNDdata;
  * 
  * Exit with failure in case of error.
  */
-inline void  PAErrorCheck (PaError err){if ( err){ std::print("PortAudio error : {}.\n", Pa_GetErrorText(err)); exit(EXIT_FAILURE);}}
+inline void  PAErrorCheck (PaError err)
+{ 
+	if (err)
+	{ 
+		std::print("PortAudio error : {}.\n", Pa_GetErrorText(err)); 
+		exit(EXIT_FAILURE);
+	} 
+}
 
 #pragma region NDI Inout
 void NDIAudioTread()
 {
-	NDIAudioReceive(NDIdata, PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS);
+	NDIAudioSourceList ndiSources;
+	
+	while (!ndiSources.search()) 
+	{
+		std::print("no source found !\n");
+	}
+	ndiSources.receiveAudio(NDIdata, PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, AUDIOQUEUE_BUFFER_MAX);
 }
 #pragma endregion
 
@@ -51,7 +65,7 @@ static int portAudioOutputCallback(	const	                    void*	inputBuffer,
 											                    void*	outputBuffer,
 											           unsigned long	framesPerBuffer,
 									const	PaStreamCallbackTimeInfo*	timeInfo,
-											PaStreamCallbackFlags		statusFlags,
+											   PaStreamCallbackFlags	statusFlags,
 											                    void*	UserData)
 {
 	auto out = static_cast<float*>(outputBuffer);
@@ -91,7 +105,7 @@ int main()
 	//::thread sndfile(sndfileRead);
 	std::thread portaudio(portAudioOutputThread);
 
-	ndiThread.detach();
+	ndiThread.join();
 	//sndfile.detach();
 	portaudio.join();
 	PAErrorCheck(Pa_Terminate());
