@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "NDIModule.h" 
+#include "SoundFileModule.h"
 #include "portaudio.h"
 #include "audioQueue.h"
 
@@ -23,7 +24,7 @@ constexpr auto PA_OUTPUT_CHANNELS			= 2;
 constexpr auto PA_FORMAT					= paFloat32;
 constexpr auto AUDIOQUEUE_BUFFER_MAX		= 441000;
 std::vector<audioQueue<float>> NDIdata;
-//std::vector<audioQueue<float>> SNDdata;
+std::vector<audioQueue<float>> SNDdata;
 #pragma endregion
 
 /**
@@ -54,14 +55,22 @@ void NDIAudioTread()
 	{
 		std::print("no source found !\n");
 	}
-	ndiSources.receiveAudio(NDIdata, PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, AUDIOQUEUE_BUFFER_MAX);
+	ndiSources.receiveAudio(NDIdata, 
+							PA_SAMPLE_RATE, 
+							PA_OUTPUT_CHANNELS, 
+							AUDIOQUEUE_BUFFER_MAX);
 }
 #pragma endregion
 
 #pragma region Sndfile Input
 void sndfileRead()
 {
-	//sndfileReceive(SNDdata,PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS);
+	sndfileInputList sndfileList;
+	sndfileList.selectAudioFile	();
+	sndfileList.readAudioFile(SNDdata,
+							  PA_SAMPLE_RATE,
+							  PA_OUTPUT_CHANNELS);
+
 }
 #pragma endregion
 
@@ -108,12 +117,12 @@ int main()
 {
 	PAErrorCheck(Pa_Initialize());
 	std::thread ndiThread(NDIAudioTread);
-	//::thread sndfile(sndfileRead);
+	std::thread sndfile(sndfileRead);
 	std::thread portaudio(portAudioOutputThread);
 
-	ndiThread.join();
-	//sndfile.detach();
-	portaudio.join();
+	ndiThread.	join();
+	sndfile.	join();
+	portaudio.	join();
 	PAErrorCheck(Pa_Terminate());
 	return 0;
 }

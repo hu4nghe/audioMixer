@@ -1,16 +1,13 @@
 #include "SoundFileModule.h"
 #include <string>
 #include <iostream>
-#include <filesystem>
-
-namespace fs = std::filesystem;
-
-
-
-void sndfileReceive(std::vector<audioQueue<float>>&queueList, int PA_SAMPLE_RATE, int PA_OUTPUT_CHANNELS)
+/*
+void sndfileReceive(std::vector<audioQueue<float>>& queueList, 
+												int PA_SAMPLE_RATE, 
+										int PA_OUTPUT_CHANNELS)
 {
 	std::vector<fs::path> pathList;
-	std::print("Sndfile: Please enter the path of the sound file, enter end to confirm.");
+	std::print("Sndfile: Please enter the path of the sound file, enter end to confirm. \n");
 	std::string filePathStr;
 	do
 	{
@@ -18,7 +15,7 @@ void sndfileReceive(std::vector<audioQueue<float>>&queueList, int PA_SAMPLE_RATE
 		if (filePathStr == "end")
 		{
 			std::print("Sound files confimed.\n");
-			break;
+			break;s
 		}
 		else
 		{
@@ -26,6 +23,7 @@ void sndfileReceive(std::vector<audioQueue<float>>&queueList, int PA_SAMPLE_RATE
 			if (fs::exists(filePath))
 			{
 				std::print("File do not exist! Please try again.\n");
+				std::print("current path: {}.\n", filePath.filename().string());
 				continue;
 			}
 			else
@@ -39,13 +37,13 @@ void sndfileReceive(std::vector<audioQueue<float>>&queueList, int PA_SAMPLE_RATE
 	} while (true);
 
 	std::vector<SndfileHandle> fileHandleList;
-	for (auto &i : pathList)
+	for (auto& i : pathList)
 	{
 		SndfileHandle sndFile(i.string());
 		fileHandleList.push_back(std::move(sndFile));
 	}
 
-	for (auto &i : fileHandleList)
+	for (auto& i : fileHandleList)
 	{
 		const size_t bufferSize = i.frames() * i.channels() + 100;
 		float* temp = new float[bufferSize];
@@ -55,20 +53,12 @@ void sndfileReceive(std::vector<audioQueue<float>>&queueList, int PA_SAMPLE_RATE
 		sndQueue.push(temp, i.frames(), i.samplerate());
 		delete[] temp;
 
-		queueList.push_back(std::move(sndQueue));		
+		queueList.push_back(std::move(sndQueue));
 	}
 	return;
 }
-
-sndfileInputList::sndfileInputList()
-{
-}
-
-sndfileInputList::~sndfileInputList()
-{
-}
-
-bool sndfileInputList::readAudioFile(std::vector<audioQueue<float>>& queue, const std::uint32_t PA_SAMPLE_RATE, const std::uint32_t PA_OUTPUT_CHANNELS)
+*/
+void sndfileInputList::selectAudioFile()
 {
 	std::vector<fs::path> pathList;
 	std::print("Sndfile: Please enter the path of the sound file, enter end to confirm.");
@@ -98,6 +88,34 @@ bool sndfileInputList::readAudioFile(std::vector<audioQueue<float>>& queue, cons
 		}
 
 	} while (true);
+}
+
+bool sndfileInputList::readAudioFile	(		std::vector<audioQueue<float>>& queue, 
+										 const	std::uint32_t					PA_SAMPLE_RATE, 
+										 const  std::uint32_t PA_OUTPUT_CHANNELS)
+{
+
+	std::vector<SndfileHandle> fileHandleList;
+	for (auto& i : pathList)
+	{
+		SndfileHandle sndFile(i.string());
+		fileHandleList.push_back(sndFile);
+	}
+
+	for (auto& i : fileHandleList)
+	{
+		const size_t bufferSize = i.frames() * i.channels() + 100;
+		float* temp = new float[bufferSize];
+		i.read(temp, bufferSize);
+
+		audioQueue<float> sndQueue(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, bufferSize);
+		sndQueue.push(temp, i.frames(), i.samplerate());
+		delete[] temp;
+
+		queue.push_back(std::move(sndQueue));
+	}
+	return;
+	
 	
 	return false;
 }

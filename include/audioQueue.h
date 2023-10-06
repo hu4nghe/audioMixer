@@ -8,6 +8,7 @@
 
 #include "samplerate.h"
 
+
 template<typename T>
 concept audioType = std::same_as<T, short> || std::same_as<T, float>;
 

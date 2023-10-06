@@ -30,7 +30,7 @@ bool NDIAudioSourceList::search()
 		pSources = NDIlib_find_get_current_sources(pNDIFind, &NDISourceNum);
 		found = true;
 	}
-	!NDIErrorCheck(pSources);
+	NDIErrorCheck(pSources);
 
 	std::print("NDI sources list:\n");
 	for (std::size_t i = 0; i < NDISourceNum; i++)
