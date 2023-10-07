@@ -90,9 +90,9 @@ void sndfileInputList::selectAudioFile()
 	} while (true);
 }
 
-bool sndfileInputList::readAudioFile	(		std::vector<audioQueue<float>>& queue, 
+void sndfileInputList::readAudioFile	(		std::vector<audioQueue<float>>& queue, 
 										 const	std::uint32_t					PA_SAMPLE_RATE, 
-										 const  std::uint32_t PA_OUTPUT_CHANNELS)
+										 const  std::uint32_t					PA_OUTPUT_CHANNELS)
 {
 
 	std::vector<SndfileHandle> fileHandleList;
@@ -115,7 +115,4 @@ bool sndfileInputList::readAudioFile	(		std::vector<audioQueue<float>>& queue,
 		queue.push_back(std::move(sndQueue));
 	}
 	return;
-	
-	
-	return false;
 }

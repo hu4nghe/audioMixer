@@ -364,3 +364,10 @@ FodyWeavers.xsd
 /$bin/testfile.exe
 /testfile/testfile.cpp
 /testfile/testfile.vcxproj
+lib/SoundFileModule.lib
+lib/SoundFileModule.lib
+lib/SoundFileModule.idb
+lib/NDIModule.lib
+lib/NDIModule.idb
+lib/audioQueue.lib
+lib/audioQueue.idb

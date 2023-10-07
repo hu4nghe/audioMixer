@@ -19,7 +19,7 @@ class sndfileInputList
 			   ~sndfileInputList		()													= default;
 
 		void	selectAudioFile			();
-		bool	readAudioFile			(		std::vector<audioQueue<float>>&		queue,
+		void	readAudioFile			(		std::vector<audioQueue<float>>&		queue,
 										 const	std::				uint32_t		PA_SAMPLE_RATE,
 										 const  std::				uint32_t		PA_OUTPUT_CHANNELS);
 	private:

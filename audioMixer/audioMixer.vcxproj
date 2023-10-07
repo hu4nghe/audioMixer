@@ -70,7 +70,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)lib\portaudio_x64.lib;$(SolutionDir)lib\Processing.NDI.Lib.x64.lib;$(SolutionDir)lib\samplerate.lib;$(SolutionDir)lib\sndfile.lib;$(SolutionDir)lib\audioQueue.lib;$(SolutionDir)lib\NDIModule.lib;$(SolutionDir)lib\SoundFileModule.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)lib\portaudio_x64.lib;$(SolutionDir)lib\Processing.NDI.Lib.x64.lib;$(SolutionDir)lib\samplerate.lib;$(SolutionDir)lib\sndfile.lib;$(SolutionDir)lib\audioQueue.lib;$(CoreLibraryDependencies);$(SolutionDir)lib\NDIModule.lib;$(SolutionDir)lib\SoundFileModule.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

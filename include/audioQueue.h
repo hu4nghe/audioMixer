@@ -8,7 +8,11 @@
 
 #include "samplerate.h"
 
-
+/**
+ * @brief 
+ * 
+ * @tparam T the audio format used : float(-1,1) or short(-32767,32768).
+ */
 template<typename T>
 concept audioType = std::same_as<T, short> || std::same_as<T, float>;
 
@@ -79,6 +83,14 @@ audioQueue<T>::audioQueue()
         bufferMin        (0) 
         { queueCount++; }
 
+/**
+ * @brief Construct a new audio Queue<T>::audio Queue object with following arguments : 
+ * 
+ * @tparam T the audio format used.
+ * @param sampleRate OUTPUT samplerate that you want.
+ * @param channelNumbers OUTPUT channels that you want.
+ * @param bufferMax the max size of buffer, in sample numbers.
+ */
 template<audioType T>
 audioQueue<T>::audioQueue              (const std::uint32_t    sampleRate, 
                                         const std:: uint8_t    channelNumbers, 
@@ -92,6 +104,12 @@ audioQueue<T>::audioQueue              (const std::uint32_t    sampleRate,
         bufferMin        (0) 
         { queueCount++; }
 
+/**
+ * @brief Copy constructor
+ * 
+ * @tparam T the audio format used.
+ * @param other 
+ */
 template<audioType T>
 audioQueue<T>::audioQueue              (const  audioQueue<T>&  other)
     :
@@ -104,6 +122,12 @@ audioQueue<T>::audioQueue              (const  audioQueue<T>&  other)
         bufferMin        (other.bufferMin) 
         { queueCount++; }
 
+/**
+ * @brief Move constructor
+ * 
+ * @tparam T T the audio format used.
+ * @param other 
+ */
 template<audioType T>
 audioQueue<T>::audioQueue              (       audioQueue<T>&& other) noexcept
     :
@@ -189,14 +213,27 @@ void audioQueue<T>::resample           (      std::vector<T>  &data,
 #pragma endregion
 
 #pragma region Public APIs
+/**
+ * @brief To push a numbers of samples into the buffer queue.
+ * 
+ * @tparam T the audio format used.
+ * @param ptr input audio array.
+ * @param frames number of samples.
+ * @param inputSampleRate INPUT sample rate of original data.
+ * @return true if push successed
+ * @return false if push failed due to no enough space.
+ */
 template<audioType T>
 bool audioQueue<T>::push               (const             T*   ptr, 
                                         const std::  size_t    frames, 
                                         const std::uint32_t    inputSampleRate)
 {
+    //check the input sample rate with expected output samplerate
     const bool needResample = (inputSampleRate != outputSampleRate);
     const auto currentSize  = frames * channelNum;
 
+    //create a temporary vector for resampleing.
+    
     std::vector<T> temp(ptr, ptr + currentSize);
 
     if (needResample) resample(temp, frames, inputSampleRate);
@@ -211,12 +248,26 @@ bool audioQueue<T>::push               (const             T*   ptr,
     }
     return true;
 }
-
+/**
+ * @brief To pop a number of samples out of buffer queue
+ * 
+ * @tparam T the audio format used.
+ * @param ptr target output array.
+ * @param frames numbers of frames wanted.
+ * @param mode true  = addition mode, adds audio data to array.
+ *             flase = cover mode, which will covers the original data in array.
+ * @return true if pop successed.
+ * @return false if pop failed or partially failed due to no enough samples in buffer.
+ */
 template<audioType T>
 bool audioQueue<T>::pop                (                  T*&  ptr, 
                                         const std::  size_t    frames,
                                         const          bool    mode)
 {
+    if (this->queue.empty()) 
+        return false;
+
+    //calculate sample number
     const auto size = frames * channelNum;
     for (auto i = 0; i < size; i++)
     {   
@@ -229,6 +280,15 @@ bool audioQueue<T>::pop                (                  T*&  ptr,
     return true;
 }
 
+/**
+ * @brief To change max buffer size of audio queue.
+ * 
+ * warning : this operation will clear all datas in the buffer queue ! 
+ * only use it when you don't want to play current audio anymore.
+ * 
+ * @tparam T 
+ * @param newCapacity new queue capacity wanted.
+ */
 template<audioType T>
 void audioQueue<T>::setCapacity        (const std::  size_t    newCapacity) 
 {   
