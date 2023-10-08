@@ -215,7 +215,7 @@ void audioQueue<T>::clear              ()
 }
 
 /**
- * @brief resample a slice of audio using libsamplerate. The output sample rate is the sample rate of the buffer queue.
+ * @brief resample a slice of audio using libsamplerate. 
  * 
  * @tparam T audio data type used
  * @param data input vector
