@@ -11,7 +11,7 @@
 /**
  * @brief 
  * 
- * @tparam T the audio format used : float(-1,1) or short(-32767,32768).
+ * @tparam T audio data format : float(-1,1) or short(-32767,32768).
  */
 template<typename T>
 concept audioType = std::same_as<T, short> || std::same_as<T, float>;
@@ -72,6 +72,11 @@ class audioQueue
 };
 
 #pragma region Constructors
+/**
+ * @brief Default constructor.
+ * 
+ * @tparam T 
+ */
 template<audioType T>
 audioQueue<T>::audioQueue()
     :   queue            (0),  
@@ -84,9 +89,9 @@ audioQueue<T>::audioQueue()
         { queueCount++; }
 
 /**
- * @brief Construct a new audio Queue<T>::audio Queue object with following arguments : 
+ * @brief Construct a new audioQueue<T>::audioQueue object with following arguments : 
  * 
- * @tparam T the audio format used.
+ * @tparam T audio data format.
  * @param sampleRate OUTPUT samplerate that you want.
  * @param channelNumbers OUTPUT channels that you want.
  * @param bufferMax the max size of buffer, in sample numbers.
@@ -107,8 +112,8 @@ audioQueue<T>::audioQueue              (const std::uint32_t    sampleRate,
 /**
  * @brief Copy constructor
  * 
- * @tparam T the audio format used.
- * @param other 
+ * @tparam T audio data format.
+ * @param other audioQueue object to copy
  */
 template<audioType T>
 audioQueue<T>::audioQueue              (const  audioQueue<T>&  other)
@@ -125,8 +130,8 @@ audioQueue<T>::audioQueue              (const  audioQueue<T>&  other)
 /**
  * @brief Move constructor
  * 
- * @tparam T T the audio format used.
- * @param other 
+ * @tparam T audio data format.
+ * @param other audioQueue object to move
  */
 template<audioType T>
 audioQueue<T>::audioQueue              (       audioQueue<T>&& other) noexcept
@@ -144,11 +149,22 @@ audioQueue<T>::audioQueue              (       audioQueue<T>&& other) noexcept
 #pragma endregion
 
 #pragma region Private member functions
+
+/**
+ * @brief enqueue operation, push one element into the audio queue.
+ * 
+ * use release - aquire model to ensure a sychornized-with relation between differnt therad.
+ * 
+ * @tparam T audio data format
+ * @param value data to push.
+ * @return true push successed.
+ * @return false push failed.
+ */
 template<audioType T>
 bool audioQueue<T>::enqueue            (const             T    value)
 {
-    auto currentTail = tail.load(std::memory_order_acquire);
-    auto    nextTail = (currentTail + 1) % queue.size();
+    auto currentTail = tail.load(std::memory_order_acquire); 
+    auto    nextTail = (currentTail + 1) % queue.size(); //calculate next tail in circular queue.
 
     if (nextTail == head.load(std::memory_order_acquire)) 
         return false; // Queue is full
@@ -160,18 +176,30 @@ bool audioQueue<T>::enqueue            (const             T    value)
     return true;
 }
 
+/**
+ * @brief dequeue operation, pop one element from the head of the queue.
+ * 
+ * use release - aquire model to ensure a sychornized-with relation between differnt therad.
+ * 
+ * @tparam T 
+ * @param value the target variable for pop output.
+ * @param mode true : do a addition that add poped element to value;
+ *             false : do a replacement that replace the origingal element in value.
+ * @return true if pop successed.
+ * @return false if pop failed.
+ */
 template<audioType T>
 bool audioQueue<T>::dequeue            (                  T&   value, 
                                         const          bool    mode)
 {
     auto currentHead =  head.load(std::memory_order_acquire);
-    auto    nextHead = (currentHead + 1) % queue.size();
+    auto    nextHead = (currentHead + 1) % queue.size();//calculate next head in circular queue.
 
     if ( currentHead == tail.load(std::memory_order_acquire)) 
         return false; // Queue is empty
 
-    if (!mode) value  = queue[currentHead];
-    else       value += queue[currentHead];
+    if (!mode) value  = queue[currentHead];//cover mode.
+    else       value += queue[currentHead];//addition mode.
 
     head        .store    (nextHead, std::memory_order_release);
     elementCount.fetch_sub(       1, std::memory_order_relaxed);
@@ -186,6 +214,14 @@ void audioQueue<T>::clear              ()
     elementCount.store(0);
 }
 
+/**
+ * @brief resample a slice of audio using libsamplerate. The output sample rate is the sample rate of the buffer queue.
+ * 
+ * @tparam T audio data format used
+ * @param data input vector
+ * @param frames input frames
+ * @param inputSampleRate original sample rate
+ */
 template<audioType T>
 void audioQueue<T>::resample           (      std::vector<T>  &data, 
                                         const std::  size_t    frames, 
@@ -193,7 +229,7 @@ void audioQueue<T>::resample           (      std::vector<T>  &data,
 {
     const auto resampleRatio = static_cast<double>(outputSampleRate) / inputSampleRate;
     const auto newSize       = static_cast<size_t>(frames * channelNum * resampleRatio);
-    std::vector<T> temp(newSize);
+    std::vector<T> temp(newSize);//new vector for resampling output.
 
     SRC_STATE* srcState = src_new(SRC_SINC_BEST_QUALITY, static_cast<int>(channelNum), nullptr);
 
@@ -208,7 +244,7 @@ void audioQueue<T>::resample           (      std::vector<T>  &data,
     src_process(srcState, &srcData);
     src_delete (srcState);
 
-    data = std::move(temp);
+    data = std::move(temp); //temp is moved and becomes deprecated to save costs.
 }
 #pragma endregion
 
@@ -216,7 +252,7 @@ void audioQueue<T>::resample           (      std::vector<T>  &data,
 /**
  * @brief To push a numbers of samples into the buffer queue.
  * 
- * @tparam T the audio format used.
+ * @tparam T audio data format.
  * @param ptr input audio array.
  * @param frames number of samples.
  * @param inputSampleRate INPUT sample rate of original data.
@@ -251,7 +287,7 @@ bool audioQueue<T>::push               (const             T*   ptr,
 /**
  * @brief To pop a number of samples out of buffer queue
  * 
- * @tparam T the audio format used.
+ * @tparam T audio data format.
  * @param ptr target output array.
  * @param frames numbers of frames wanted.
  * @param mode true  = addition mode, adds audio data to array.
