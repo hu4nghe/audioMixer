@@ -31,6 +31,8 @@ std::vector<audioQueue<float>> SNDdata;
  * @brief Error checker PortAudio library.
  * 
  * In case of error, print error message and exit with failure. 
+ * 
+ * @param err PaError type error code.
  */
 inline void  PAErrorCheck (PaError err)
 { 
@@ -62,6 +64,7 @@ void NDIAudioTread()
 	{
 		std::print("no source found !\n");
 	}
+
 	ndiSources.receiveAudio(NDIdata, 
 							PA_SAMPLE_RATE, 
 							PA_OUTPUT_CHANNELS, 
@@ -103,7 +106,9 @@ void portAudioOutputThread()
 {
 	std::signal(SIGINT, sigIntHandler);
 
+	PAErrorCheck(Pa_Initialize());
 	PaStream* streamOut;
+	//initialize portaudio stream using default devices.
 	PAErrorCheck(Pa_OpenDefaultStream( &streamOut,
 										PA_INPUT_CHANNELS,				
 										PA_OUTPUT_CHANNELS,				
@@ -118,14 +123,16 @@ void portAudioOutputThread()
 		if ( NDIdata.empty()) Pa_StopStream (streamOut);
 		if (!NDIdata.empty()) Pa_StartStream(streamOut);
 	}
+	
+	//clean up
 	PAErrorCheck(Pa_StopStream(streamOut));
 	PAErrorCheck(Pa_CloseStream(streamOut));
+	PAErrorCheck(Pa_Terminate());
 }
 #pragma endregion
 
 int main()
 {
-	PAErrorCheck(Pa_Initialize());
 	std::thread ndiThread(NDIAudioTread);
 	//std::thread sndfile(sndfileRead);
 	std::thread portaudio(portAudioOutputThread);
@@ -133,6 +140,5 @@ int main()
 	ndiThread.	join();
 	//sndfile.	join();
 	portaudio.	join();
-	PAErrorCheck(Pa_Terminate());
 	return 0;
 }

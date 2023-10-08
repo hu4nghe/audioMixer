@@ -8,6 +8,7 @@ class NDIAudioSourceList
 {
 	public:
 				NDIAudioSourceList		();
+				//any copy or move of NDIAudioSourceList object is not possible! 
 				NDIAudioSourceList		(const			  NDIAudioSourceList&	 other) = delete;
 				NDIAudioSourceList		(				  NDIAudioSourceList&&   other) = delete;
 			   ~NDIAudioSourceList		();
@@ -27,6 +28,16 @@ class NDIAudioSourceList
 
 #endif//NDI_MODUEL_H
 
+/**
+ * @brief NDI error checker
+ * 
+ * return nullptr if a operation is failed
+ * return pointer itself if operation is successed.
+ * 
+ * @tparam T audio data type.
+ * @param ptr NDI object pointer
+ * @return T* ptr itself
+ */
 template<typename T>
 inline T* NDIAudioSourceList::NDIErrorCheck(T* ptr)
 {

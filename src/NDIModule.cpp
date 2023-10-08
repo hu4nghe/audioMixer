@@ -6,10 +6,18 @@
 
 constexpr auto NDI_TIMEOUT = 1000;
 
+/**
+ * @brief NDIAudioSourceList default constructor.
+ * 
+ */
 NDIAudioSourceList::NDIAudioSourceList()
 	:	sourceCount(0),
 		recvList(0){ NDIlib_initialize(); }
 
+/**
+ * @brief Destroy the NDIAudioSourceList::NDIAudioSourceList object
+ * 
+ */
 NDIAudioSourceList::~NDIAudioSourceList()
 {
 	for (auto& i : recvList)
@@ -17,8 +25,17 @@ NDIAudioSourceList::~NDIAudioSourceList()
 	NDIlib_destroy();
 }
 
+/**
+ * @brief try to search all NDI audio source available and let user select sources wanted.
+ * 
+ * type ip adresse of sources to select.
+ * type end to confirm.
+ * type "all" to select all sources available.
+ * 
+ */
 bool NDIAudioSourceList::search()
 {	
+	//Create a NDI finder and find sources available.
 	const NDIlib_find_create_t NDIFindCreateDesc;
 	auto pNDIFind = NDIErrorCheck(NDIlib_find_create_v2(&NDIFindCreateDesc));
 	uint32_t NDISourceNum = 0;
@@ -32,10 +49,13 @@ bool NDIAudioSourceList::search()
 	}
 	NDIErrorCheck(pSources);
 
+	//List all available sources.
 	std::print("NDI sources list:\n");
 	for (std::size_t i = 0; i < NDISourceNum; i++)
 		std::print("Source {}\nName : {}\nIP   : {}\n\n", i, pSources[i].p_ndi_name, pSources[i].p_url_address);
 
+	
+	//let user select sources they want.
 	std::vector<NDIlib_recv_create_v3_t> sourceList;
 	bool sourceMatched = false;
 	bool selectAll = false;
@@ -69,6 +89,7 @@ bool NDIAudioSourceList::search()
 		if (!sourceMatched) std::print("Source do not exist! Please try again.\n");
 	} while (true);
 
+	//for every source selected, create a NDI receiver for further operations.
 	for (auto& i : sourceList)
 	{
 		auto pNDIRecv = NDIErrorCheck(NDIlib_recv_create_v3(&i));
@@ -78,6 +99,14 @@ bool NDIAudioSourceList::search()
 	return true;
 }
 
+/**
+ * @brief try to capture NDI AUDIO data from every NDI receiver in recvList.
+ * 
+ * @param queueList audioQueue objects that are used to stock audio data
+ * @param PA_SAMPLE_RATE portaudio OUTPUT sample rate
+ * @param PA_OUTPUT_CHANNELS portaudio OUTPUT channel numbers
+ * @param bufferMax max buffer size allocated for audioQueue.(defined by user.)
+ */
 void NDIAudioSourceList::receiveAudio(		std::vector<audioQueue<float>>& queueList, 
 									  const std::				uint32_t	PA_SAMPLE_RATE, 
 									  const	std::				uint32_t	PA_OUTPUT_CHANNELS,

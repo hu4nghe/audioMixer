@@ -11,7 +11,7 @@
 /**
  * @brief 
  * 
- * @tparam T audio data format : float(-1,1) or short(-32767,32768).
+ * @tparam T audio data type : float(-1,1) or short(-32767,32768).
  */
 template<typename T>
 concept audioType = std::same_as<T, short> || std::same_as<T, float>;
@@ -91,7 +91,7 @@ audioQueue<T>::audioQueue()
 /**
  * @brief Construct a new audioQueue<T>::audioQueue object with following arguments : 
  * 
- * @tparam T audio data format.
+ * @tparam T audio data type.
  * @param sampleRate OUTPUT samplerate that you want.
  * @param channelNumbers OUTPUT channels that you want.
  * @param bufferMax the max size of buffer, in sample numbers.
@@ -112,7 +112,7 @@ audioQueue<T>::audioQueue              (const std::uint32_t    sampleRate,
 /**
  * @brief Copy constructor
  * 
- * @tparam T audio data format.
+ * @tparam T audio data type.
  * @param other audioQueue object to copy
  */
 template<audioType T>
@@ -130,7 +130,7 @@ audioQueue<T>::audioQueue              (const  audioQueue<T>&  other)
 /**
  * @brief Move constructor
  * 
- * @tparam T audio data format.
+ * @tparam T audio data type.
  * @param other audioQueue object to move
  */
 template<audioType T>
@@ -155,7 +155,7 @@ audioQueue<T>::audioQueue              (       audioQueue<T>&& other) noexcept
  * 
  * use release - aquire model to ensure a sychornized-with relation between differnt therad.
  * 
- * @tparam T audio data format
+ * @tparam T audio data type
  * @param value data to push.
  * @return true push successed.
  * @return false push failed.
@@ -217,7 +217,7 @@ void audioQueue<T>::clear              ()
 /**
  * @brief resample a slice of audio using libsamplerate. The output sample rate is the sample rate of the buffer queue.
  * 
- * @tparam T audio data format used
+ * @tparam T audio data type used
  * @param data input vector
  * @param frames input frames
  * @param inputSampleRate original sample rate
@@ -252,7 +252,7 @@ void audioQueue<T>::resample           (      std::vector<T>  &data,
 /**
  * @brief To push a numbers of samples into the buffer queue.
  * 
- * @tparam T audio data format.
+ * @tparam T audio data type.
  * @param ptr input audio array.
  * @param frames number of samples.
  * @param inputSampleRate INPUT sample rate of original data.
@@ -287,7 +287,7 @@ bool audioQueue<T>::push               (const             T*   ptr,
 /**
  * @brief To pop a number of samples out of buffer queue
  * 
- * @tparam T audio data format.
+ * @tparam T audio data type.
  * @param ptr target output array.
  * @param frames numbers of frames wanted.
  * @param mode true  = addition mode, adds audio data to array.
