@@ -16,7 +16,8 @@ class NDIAudioSourceList
 		void	receiveAudio			(		std::vector<audioQueue<float>>&  queue, 
 										 const	std::				uint32_t	 PA_SAMPLE_RATE, 
 										 const  std::				uint32_t	 PA_OUTPUT_CHANNELS,
-										 const	std::				  size_t	 bufferMax);
+										 const	std::				  size_t	 bufferMax,
+										 const  std::				  size_t	 bufferMin);
 		template<typename T>
 		   T*	NDIErrorCheck		(							T*	 ptr);
 	

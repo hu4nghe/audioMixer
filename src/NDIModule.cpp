@@ -3,7 +3,6 @@
 #include <iostream>
 #include <algorithm>
 
-
 constexpr auto NDI_TIMEOUT = 1000;
 
 /**
@@ -48,6 +47,7 @@ bool NDIAudioSourceList::search()
 		found = true;
 	}
 	NDIErrorCheck(pSources);
+	if (!NDISourceNum)	return false;
 
 	//List all available sources.
 	std::print("NDI sources list:\n");
@@ -89,6 +89,7 @@ bool NDIAudioSourceList::search()
 		if (!sourceMatched) std::print("Source do not exist! Please try again.\n");
 	} while (true);
 
+	
 	//for every source selected, create a NDI receiver for further operations.
 	for (auto& i : sourceList)
 	{
@@ -96,6 +97,7 @@ bool NDIAudioSourceList::search()
 		recvList.push_back(pNDIRecv);
 	}
 	NDIlib_find_destroy(pNDIFind);
+	
 	return true;
 }
 
@@ -110,11 +112,12 @@ bool NDIAudioSourceList::search()
 void NDIAudioSourceList::receiveAudio(		std::vector<audioQueue<float>>& queueList, 
 									  const std::				uint32_t	PA_SAMPLE_RATE, 
 									  const	std::				uint32_t	PA_OUTPUT_CHANNELS,
-									  const std::				  size_t	bufferMax)
+									  const std::				  size_t	bufferMax,
+									  const std::				  size_t	bufferMin)
 {
 	for (auto i : recvList)
 	{
-		audioQueue<float> NDIdata(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, bufferMax);
+		audioQueue<float> NDIdata(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, bufferMax, bufferMin);
 		queueList.push_back(std::move(NDIdata));
 	}
 	
@@ -132,9 +135,9 @@ void NDIAudioSourceList::receiveAudio(		std::vector<audioQueue<float>>& queueLis
 				NDIlib_audio_frame_interleaved_32f_t audioDataNDI;
 				audioDataNDI.p_data = new float[dataSize];
 				NDIlib_util_audio_to_interleaved_32f_v2(&audioInput, &audioDataNDI);
-
+				
 				queueList[i].push(audioDataNDI.p_data, audioDataNDI.no_samples, audioDataNDI.sample_rate);
-
+				
 				delete[] audioDataNDI.p_data;
 			}
 			else continue;

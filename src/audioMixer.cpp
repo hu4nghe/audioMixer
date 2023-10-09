@@ -22,7 +22,11 @@ constexpr auto PA_BUFFER_SIZE				= 441;		//portaudio frames per buffer
 constexpr auto PA_INPUT_CHANNELS			= 0;		
 constexpr auto PA_OUTPUT_CHANNELS			= 2;
 constexpr auto PA_FORMAT					= paFloat32;
-constexpr auto AUDIOQUEUE_BUFFER_MAX		= 441000;	//Default buffer size : 10s for 44.1 KHz
+//constexpr auto AUDIOQUEUE_BUFFER_MAX		= 441000;	//Default buffer size : 10s for 44.1 KHz
+
+int AUDIOQUEUE_BUFFER_MAX = 0;
+int AUDIOQUEUE_BUFFER_MIN = 0;
+
 std::vector<audioQueue<float>> NDIdata;
 std::vector<audioQueue<float>> SNDdata;
 #pragma endregion
@@ -62,13 +66,15 @@ void NDIAudioTread()
 	
 	while (!ndiSources.search()) 
 	{
-		std::print("no source found !\n");
+		std::print("no source found ! type any key to serach again\n");
+		std::cin.get();
 	}
 
 	ndiSources.receiveAudio(NDIdata, 
 							PA_SAMPLE_RATE, 
 							PA_OUTPUT_CHANNELS, 
-							AUDIOQUEUE_BUFFER_MAX);
+							AUDIOQUEUE_BUFFER_MAX,
+							AUDIOQUEUE_BUFFER_MIN);
 }
 #pragma endregion
 
@@ -102,6 +108,15 @@ static int portAudioOutputCallback(	const	                    void*	inputBuffer,
 	return paContinue;
 }
 
+bool isAudioQueueVecEmpty(std::vector<audioQueue<float>>& vec)
+{
+	for (const auto i : vec)
+	{
+		if (!i.empty()) return false;
+	}
+	return true;
+}
+
 void portAudioOutputThread()
 {
 	std::signal(SIGINT, sigIntHandler);
@@ -117,11 +132,18 @@ void portAudioOutputThread()
 										PA_BUFFER_SIZE,					
 										portAudioOutputCallback,
 										nullptr));
+	
+	//lambda to check if all audioQueue is empty.
+	//if yes, pause the portaudio and wait for new datas to restart it.
+	auto isAudioQueueVecEmpty = [](const std::vector<audioQueue<float>>& vec) 
+	{
+		return std::all_of(vec.begin(), vec.end(), [](const audioQueue<float>& i) { return i.empty(); });
+	};
 
 	while (!exit_loop)
 	{
-		if ( NDIdata.empty()) Pa_StopStream (streamOut);
-		if (!NDIdata.empty()) Pa_StartStream(streamOut);
+		if ( isAudioQueueVecEmpty(NDIdata)) Pa_StopStream (streamOut);
+		if (!isAudioQueueVecEmpty(NDIdata)) Pa_StartStream(streamOut);
 	}
 	
 	//clean up
@@ -131,8 +153,18 @@ void portAudioOutputThread()
 }
 #pragma endregion
 
+
+
 int main()
 {
+	std::print("Configuration audio queue :\nplease enter the max buffer size(in sample number)\n");
+	std::cin >> AUDIOQUEUE_BUFFER_MAX;
+	if (AUDIOQUEUE_BUFFER_MAX == 0) std::print("Error : Max buffer size equals to zero !\n");
+	std::print("please enter the min numbers of samples in the buffer(in sample number)\n");
+	std::cin >> AUDIOQUEUE_BUFFER_MIN;
+	
+
+
 	std::thread ndiThread(NDIAudioTread);
 	//std::thread sndfile(sndfileRead);
 	std::thread portaudio(portAudioOutputThread);

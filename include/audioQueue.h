@@ -39,7 +39,8 @@ class audioQueue
                              audioQueue         ();
                              audioQueue         (const  std::uint32_t    sampleRate,
                                                  const  std:: uint8_t    channelNumbers,
-                                                 const  std::  size_t    bufferMax);
+                                                 const  std::  size_t    bufferMax,
+                                                 const  std::  size_t    bufferMin);
                              audioQueue         (const   audioQueue<T>&  other);
                              audioQueue         (        audioQueue<T>&& other)                        noexcept;
                             ~audioQueue         ()                                                     noexcept     { queueCount--; }
@@ -54,12 +55,13 @@ class audioQueue
     inline             void  setSampleRate      (const  std::uint32_t    newSampleRate)                noexcept     { outputSampleRate = newSampleRate; }
     inline             void  setChannelNum      (const  std:: uint8_t    newChannelNum )               noexcept     { channelNum       = newChannelNum; }
                        void  setCapacity        (const  std::  size_t    newCapacity);
+    inline             void  setMinBuffer       (const  std::  size_t    newMinBuffer)                 noexcept     { bufferMin        = newMinBuffer;}
 
     inline             bool  empty              ()                                              const  noexcept     { return !elementCount.load(); }
-    inline    std::  size_t  size               ()                                              const  noexcept     { return elementCount.load(); }
-    inline    std:: uint8_t  channels           ()                                              const  noexcept     { return channelNum; }
-    inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return outputSampleRate; }
-    static    std::uint32_t  getCount           ()                                                     noexcept     { return queueCount; }
+    inline    std::  size_t  size               ()                                              const  noexcept     { return  elementCount.load(); }
+    inline    std:: uint8_t  channels           ()                                              const  noexcept     { return  channelNum; }
+    inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return  outputSampleRate; }
+    static    std::uint32_t  getCount           ()                                                     noexcept     { return  queueCount; }
 
     private :
                        bool  enqueue            (const              T    value);
@@ -99,14 +101,15 @@ audioQueue<T>::audioQueue()
 template<audioType T>
 audioQueue<T>::audioQueue              (const std::uint32_t    sampleRate, 
                                         const std:: uint8_t    channelNumbers, 
-                                        const std::  size_t    bufferMax)
+                                        const std::  size_t    bufferMax,
+                                        const std::  size_t    bufferMin)
     :   queue            (bufferMax * channelNumbers),
         outputSampleRate (sampleRate), 
         channelNum       (channelNumbers),
         head             (0), 
         tail             (0),
         elementCount     (0),
-        bufferMin        (0) 
+        bufferMin        (bufferMin)
         { queueCount++; }
 
 /**
@@ -273,7 +276,7 @@ bool audioQueue<T>::push               (const             T*   ptr,
     std::vector<T> temp(ptr, ptr + currentSize);
 
     if (needResample) resample(temp, frames, inputSampleRate);
-    
+
     for (const auto i : temp)
     {
         if (!this->enqueue(i))
@@ -305,11 +308,19 @@ bool audioQueue<T>::pop                (                  T*&  ptr,
 
     //calculate sample number
     const auto size = frames * channelNum;
+    const auto estimation = elementCount.load() - (frames * channelNum);
+
     for (auto i = 0; i < size; i++)
-    {   
+    {
+        if (estimation < bufferMin)
+        {
+            std::print(stderr, "warning : current sample number is lower than limit.\n");
+            return false;
+        }
+       
         if (!this->dequeue(ptr[i],mode)) 
         {
-            std::print("pop error\n");
+            std::print("pop error : no enough element in queue!\n");
             return false;
         }
     }
