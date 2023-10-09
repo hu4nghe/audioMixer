@@ -163,7 +163,7 @@ audioQueue<T>::audioQueue              (       audioQueue<T>&& other) noexcept
 template<audioType T>
 bool audioQueue<T>::enqueue            (const             T    value)
 {
-    auto currentTail = tail.load(std::memory_order_acquire); 
+    auto currentTail = tail.load(std::memory_order_relaxed);
     auto    nextTail = (currentTail + 1) % queue.size(); //calculate next tail in circular queue.
 
     if (nextTail == head.load(std::memory_order_acquire)) 
@@ -192,7 +192,7 @@ template<audioType T>
 bool audioQueue<T>::dequeue            (                  T&   value, 
                                         const          bool    mode)
 {
-    auto currentHead =  head.load(std::memory_order_acquire);
+    auto currentHead =  head.load(std::memory_order_relaxed);
     auto    nextHead = (currentHead + 1) % queue.size();//calculate next head in circular queue.
 
     if ( currentHead == tail.load(std::memory_order_acquire)) 

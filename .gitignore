@@ -374,3 +374,7 @@ lib/audioQueue.lib
 lib/audioQueue.idb
 lib/audioQueue.pdb
 
+/lib/audioQueue.idb
+/lib/audioQueue.lib
+/lib/NDIModule.idb
+/lib/NDIModule.lib
