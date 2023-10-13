@@ -21,7 +21,9 @@ class sndfileInputList
 		void	selectAudioFile			();
 		void	readAudioFile			(		std::vector<audioQueue<float>>&		queue,
 										 const	std::				uint32_t		PA_SAMPLE_RATE,
-										 const  std::				uint32_t		PA_OUTPUT_CHANNELS);
+										 const  std::				uint32_t		PA_OUTPUT_CHANNELS,
+										 const  std::				uint32_t		BUFFER_MAX,
+										 const	std::				uint32_t		BUFFER_MIN);
 	private:
 		std::vector<fs::path> pathList;
 };

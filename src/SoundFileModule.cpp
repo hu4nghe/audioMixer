@@ -1,63 +1,8 @@
 #include "SoundFileModule.h"
 #include <string>
 #include <iostream>
-/*
-void sndfileReceive(std::vector<audioQueue<float>>& queueList, 
-												int PA_SAMPLE_RATE, 
-										int PA_OUTPUT_CHANNELS)
-{
-	std::vector<fs::path> pathList;
-	std::print("Sndfile: Please enter the path of the sound file, enter end to confirm. \n");
-	std::string filePathStr;
-	do
-	{
-		std::getline(std::cin >> std::ws, filePathStr);
-		if (filePathStr == "end")
-		{
-			std::print("Sound files confimed.\n");
-			break;s
-		}
-		else
-		{
-			fs::path filePath(filePathStr);
-			if (fs::exists(filePath))
-			{
-				std::print("File do not exist! Please try again.\n");
-				std::print("current path: {}.\n", filePath.filename().string());
-				continue;
-			}
-			else
-			{
-				std::print("Sound file seletcted : {}.\n", filePath.filename().string());
-				pathList.push_back(std::move(filePath));
-			}
 
-		}
 
-	} while (true);
-
-	std::vector<SndfileHandle> fileHandleList;
-	for (auto& i : pathList)
-	{
-		SndfileHandle sndFile(i.string());
-		fileHandleList.push_back(std::move(sndFile));
-	}
-
-	for (auto& i : fileHandleList)
-	{
-		const size_t bufferSize = i.frames() * i.channels() + 100;
-		float* temp = new float[bufferSize];
-		i.read(temp, bufferSize);
-
-		audioQueue<float> sndQueue(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, bufferSize);
-		sndQueue.push(temp, i.frames(), i.samplerate());
-		delete[] temp;
-
-		queueList.push_back(std::move(sndQueue));
-	}
-	return;
-}
-*/
 void sndfileInputList::selectAudioFile()
 {
 	std::vector<fs::path> pathList;
@@ -91,8 +36,10 @@ void sndfileInputList::selectAudioFile()
 }
 
 void sndfileInputList::readAudioFile	(		std::vector<audioQueue<float>>& queue, 
-										 const	std::uint32_t					PA_SAMPLE_RATE, 
-										 const  std::uint32_t					PA_OUTPUT_CHANNELS)
+										 const	std::				uint32_t	PA_SAMPLE_RATE, 
+										 const  std::				uint32_t	PA_OUTPUT_CHANNELS,
+										 const  std::				uint32_t	BUFFER_MAX,
+										 const	std::				uint32_t	BUFFER_MIN)
 {
 
 	std::vector<SndfileHandle> fileHandleList;
@@ -108,7 +55,7 @@ void sndfileInputList::readAudioFile	(		std::vector<audioQueue<float>>& queue,
 		float* temp = new float[bufferSize];
 		i.read(temp, bufferSize);
 
-		audioQueue<float> sndQueue(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, bufferSize);
+		audioQueue<float> sndQueue(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, BUFFER_MAX,BUFFER_MIN);
 		sndQueue.push(temp, i.frames(), i.samplerate());
 		delete[] temp;
 

@@ -17,15 +17,16 @@ static void sigIntHandler(int) { exit_loop = true; }
 #pragma endregion
 
 #pragma region Global constants and variables
-constexpr auto PA_SAMPLE_RATE				= 44100;	//portaudio output sample rate
-constexpr auto PA_BUFFER_SIZE				= 441;		//portaudio frames per buffer
+//constexpr auto PA_SAMPLE_RATE				= 44100;	//portaudio output sample rate
+constexpr auto PA_BUFFER_SIZE				= 128;		//portaudio frames per buffer
 constexpr auto PA_INPUT_CHANNELS			= 0;		
 constexpr auto PA_OUTPUT_CHANNELS			= 2;
 constexpr auto PA_FORMAT					= paFloat32;
 //constexpr auto AUDIOQUEUE_BUFFER_MAX		= 441000;	//Default buffer size : 10s for 44.1 KHz
 
-int AUDIOQUEUE_BUFFER_MAX = 0;
-int AUDIOQUEUE_BUFFER_MIN = 0;
+auto PA_SAMPLE_RATE			= 44100;
+auto AUDIOQUEUE_BUFFER_MAX	= 441000;
+auto AUDIOQUEUE_BUFFER_MIN	= 4410;
 
 std::vector<audioQueue<float>> NDIdata;
 std::vector<audioQueue<float>> SNDdata;
@@ -85,7 +86,9 @@ void sndfileRead()
 	sndfileList.selectAudioFile	();
 	sndfileList.readAudioFile(SNDdata,
 							  PA_SAMPLE_RATE,
-							  PA_OUTPUT_CHANNELS);
+							  PA_OUTPUT_CHANNELS,
+							  AUDIOQUEUE_BUFFER_MAX,
+							  AUDIOQUEUE_BUFFER_MIN);
 
 }
 #pragma endregion
@@ -110,7 +113,7 @@ static int portAudioOutputCallback(	const	                    void*	inputBuffer,
 
 bool isAudioQueueVecEmpty(std::vector<audioQueue<float>>& vec)
 {
-	for (const auto i : vec)
+	for (const auto& i : vec)
 	{
 		if (!i.empty()) return false;
 	}
@@ -135,15 +138,26 @@ void portAudioOutputThread()
 	
 	//lambda to check if all audioQueue is empty.
 	//if yes, pause the portaudio and wait for new datas to restart it.
-	auto isAudioQueueVecEmpty = [](const std::vector<audioQueue<float>>& vec) 
+	/*auto isAudioQueueVecEmpty = [](const std::vector<audioQueue<float>>& vec)
 	{
 		return std::all_of(vec.begin(), vec.end(), [](const audioQueue<float>& i) { return i.empty(); });
-	};
-
+	};*/
+	Pa_StartStream(streamOut);
 	while (!exit_loop)
 	{
-		if ( isAudioQueueVecEmpty(NDIdata)) Pa_StopStream (streamOut);
-		if (!isAudioQueueVecEmpty(NDIdata)) Pa_StartStream(streamOut);
+		/*
+		if (isAudioQueueVecEmpty(NDIdata) && Pa_IsStreamActive(streamOut))
+		{
+			//std::print("all queue is empty! stream stopped.\n ");
+			Pa_StopStream (streamOut);
+
+		}
+			
+		if (!isAudioQueueVecEmpty(NDIdata) && Pa_IsStreamStopped(streamOut))
+		{
+			std::print("at least one queue is not empty! stream restarted.\n");
+			Pa_StartStream(streamOut);
+		}*/
 	}
 	
 	//clean up
@@ -156,8 +170,10 @@ void portAudioOutputThread()
 
 
 int main()
-{
-	std::print("Configuration audio queue :\nplease enter the max buffer size(in sample number)\n");
+{	
+	std::print("Configuration :\nplease enter output sample rate:(in Hz)\n");
+	std::cin >> PA_SAMPLE_RATE;
+	std::print("please enter the max buffer size(in sample number)\n");
 	std::cin >> AUDIOQUEUE_BUFFER_MAX;
 	if (AUDIOQUEUE_BUFFER_MAX == 0) std::print("Error : Max buffer size equals to zero !\n");
 	std::print("please enter the min numbers of samples in the buffer(in sample number)\n");

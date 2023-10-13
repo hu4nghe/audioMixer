@@ -28,11 +28,10 @@ class audioQueue
                                             std::atomic<std::  size_t>   head;
                                             std::atomic<std::  size_t>   tail;                
                                             std::atomic<std::  size_t>   elementCount;
-
+                                                        std::  size_t    bufferMin;
                                                         std::uint32_t    outputSampleRate;
-    
                                                         std:: uint8_t    channelNum;
-                                                        std:: uint8_t    bufferMin;
+                                                        
                                                         
                                 
     public : 
@@ -308,13 +307,13 @@ bool audioQueue<T>::pop                (                  T*&  ptr,
 
     //calculate sample number
     const auto size = frames * channelNum;
-    const auto estimation = elementCount.load() - (frames * channelNum);
+    const auto estimation = elementCount.load() - size;
 
     for (auto i = 0; i < size; i++)
     {
         if (estimation < bufferMin)
         {
-            std::print(stderr, "warning : current sample number is lower than limit.\n");
+            //std::print(stderr, "warning : current sample number is lower than limit.\n");
             return false;
         }
        
