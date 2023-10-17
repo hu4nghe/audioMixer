@@ -19,7 +19,7 @@ class NDIAudioSourceList
 										 const	std::				  size_t	 bufferMax,
 										 const  std::				  size_t	 bufferMin);
 		template<typename T>
-		   T*	NDIErrorCheck		(							T*	 ptr);
+		   T*	NDIErrorCheck			(								   T*	 ptr);
 	
 
 	private : 
