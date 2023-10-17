@@ -63,6 +63,8 @@ void channelAdaption(int originalChannel, int outputChannel)
  */
 void NDIAudioTread()
 {
+	std::signal(SIGINT, sigIntHandler);
+
 	NDIAudioSourceList ndiSources;
 	
 	while (!ndiSources.search()) 
@@ -82,6 +84,7 @@ void NDIAudioTread()
 #pragma region Sndfile Input
 void sndfileRead()
 {
+	std::signal(SIGINT, sigIntHandler);
 	sndfileInputList sndfileList;
 	sndfileList.selectAudioFile	();
 	sndfileList.readAudioFile(SNDdata,
@@ -105,20 +108,20 @@ static int portAudioOutputCallback(	const	                    void*	inputBuffer,
 	//Set output buffer to zero by default to avoid noise when there is no input.
 	memset(out, 0, sizeof(out) * framesPerBuffer);
 	//for every audioQueue in the list
-	for (auto& i : NDIdata)
-		i.pop(out, framesPerBuffer, true);//mode : true for addition, false for override.
+	for (auto& currentAudioQueue : NDIdata)
+	{
+		if (currentAudioQueue.pop(out, framesPerBuffer, true))//mode : true for addition, false for override.
+			std::print("{} elements			{}  seconds.\n", currentAudioQueue.size(), currentAudioQueue.size() / (currentAudioQueue.sampleRate() * currentAudioQueue.channels()));
+		else
+			std::print("Min buffer size reached, add more audio data to continue!\n");
+	}
+		
 
 	return paContinue;
 }
 
-bool isAudioQueueVecEmpty(std::vector<audioQueue<float>>& vec)
-{
-	for (const auto& i : vec)
-	{
-		if (!i.empty()) return false;
-	}
-	return true;
-}
+
+
 
 void portAudioOutputThread()
 {

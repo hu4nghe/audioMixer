@@ -136,7 +136,8 @@ void NDIAudioSourceList::receiveAudio(		std::vector<audioQueue<float>>& queueLis
 				audioDataNDI.p_data = new float[dataSize];
 				NDIlib_util_audio_to_interleaved_32f_v2(&audioInput, &audioDataNDI);
 				
-				queueList[i].push(audioDataNDI.p_data, audioDataNDI.no_samples, audioDataNDI.sample_rate);
+				if (!queueList[i].push(audioDataNDI.p_data, audioDataNDI.no_samples, audioDataNDI.sample_rate))
+					std::print("No more space in the queue!");
 				
 				delete[] audioDataNDI.p_data;
 			}
