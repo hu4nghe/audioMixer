@@ -111,7 +111,11 @@ static int portAudioOutputCallback(	const	                    void*	inputBuffer,
 	for (auto& currentAudioQueue : NDIdata)
 	{
 		if (currentAudioQueue.pop(out, framesPerBuffer, true))//mode : true for addition, false for override.
-			std::print("{} elements			{}  seconds.\n", currentAudioQueue.size(), currentAudioQueue.size() / (currentAudioQueue.sampleRate() * currentAudioQueue.channels()));
+		{
+			std::print("{}  elements	|	{}  seconds.\n",
+					   currentAudioQueue.size(),
+					   currentAudioQueue.size() / (currentAudioQueue.sampleRate() * currentAudioQueue.channels()));
+		}
 		else
 			std::print("Min buffer size reached, add more audio data to continue!\n");
 	}
