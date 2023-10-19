@@ -379,3 +379,4 @@ lib/audioQueue.pdb
 /lib/NDIModule.idb
 /lib/NDIModule.lib
 /lib/SoundFileModule.lib
+*.exe
