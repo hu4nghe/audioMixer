@@ -361,22 +361,14 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/$bin/testfile.exe
-/testfile/testfile.cpp
-/testfile/testfile.vcxproj
-lib/SoundFileModule.lib
-lib/SoundFileModule.idb
-lib/SoundFileModule.pdb
-lib/NDIModule.lib
-lib/NDIModule.idb
-lib/NDIModule.pdb
-lib/audioQueue.lib
-lib/audioQueue.idb
-lib/audioQueue.pdb
 
+/lib/SoundFileModule.lib
+/lib/SoundFileModule.idb
+/lib/SoundFileModule.pdb
 /lib/audioQueue.idb
 /lib/audioQueue.lib
+/lib/audioQueue.pdb
 /lib/NDIModule.idb
 /lib/NDIModule.lib
-/lib/SoundFileModule.lib
+/lib/NDIModule.pdb
 *.exe
