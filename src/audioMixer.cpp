@@ -110,20 +110,19 @@ static int portAudioOutputCallback(	const	                    void*	inputBuffer,
 	//for every audioQueue in the list
 	for (auto& currentAudioQueue : NDIdata)
 	{
-		if (currentAudioQueue.pop(out, framesPerBuffer, true))//mode : true for addition, false for override.
+		if (currentAudioQueue.pop(out, framesPerBuffer, true))//pop in addition mode, return true if successefully poped.
 		{
+			//calculate and print infoss
+			auto samplePlayedPerSecond = static_cast<uint64_t>(currentAudioQueue.sampleRate()) * currentAudioQueue.channels();
 			std::print("{}  elements	|	{}  seconds.\n",
 					   currentAudioQueue.size(),
-					   currentAudioQueue.size() / (currentAudioQueue.sampleRate() * currentAudioQueue.channels()));
+					   currentAudioQueue.size() / samplePlayedPerSecond);
 		}
 		else
 			std::print("Min buffer size reached, add more audio data to continue!\n");
 	}
-		
-
 	return paContinue;
 }
-
 
 
 
@@ -144,8 +143,7 @@ void portAudioOutputThread()
 										portAudioOutputCallback,
 										nullptr));
 	while(!NDIselectReady.load(std::memory_order_acquire)){}
-	Pa_StartStream(streamOut);
-	bool PaActiveFlag = true;
+	bool PaActiveFlag = false;
 	while (!exit_loop)
 	{
 		char ch = getchar();
@@ -153,20 +151,20 @@ void portAudioOutputThread()
 		{
 			if(PaActiveFlag)
 			{
-				Pa_StopStream(streamOut);
+				Pa_StopStream (streamOut);
 				std::print("Portaudio Status : Stopped.\n");
 			}
 			else
 			{
 				Pa_StartStream(streamOut);
-				std::print("Portaudio Status : Active.\n");
+				std::print("Portaudio Status : Active. \n");
 			}
 
 			PaActiveFlag = !PaActiveFlag;			
 		}
 		
 	}
-	PAErrorCheck(Pa_StopStream(streamOut));
+	PAErrorCheck(Pa_StopStream (streamOut));
 	PAErrorCheck(Pa_CloseStream(streamOut));
 	PAErrorCheck(Pa_Terminate());
 }
@@ -179,24 +177,24 @@ int main()
 	std::print("Configuration :\nplease enter output sample rate:(in Hz)\n");
 	std::cin >> PA_SAMPLE_RATE;
 
-	uint32_t timeMax;
-	std::print("please enter the max buffer size(in seconds)\n");
+	float timeMax;
+	std::print("please enter the max buffer size(in ms)\n");
 	std::cin >> timeMax;
+	timeMax /= 1000;
 		
-	AUDIOQUEUE_BUFFER_MAX = timeMax * PA_SAMPLE_RATE;
+	AUDIOQUEUE_BUFFER_MAX = timeMax * PA_SAMPLE_RATE * PA_OUTPUT_CHANNELS;
 	
-	uint32_t timeMin;
-	std::print("please enter the min buffer	size(in seconds)\n");
+	float timeMin;
+	std::print("please enter the min buffer size(in ms)\n");
 	std::cin >> timeMin;
+	timeMin /= 1000;
 
-	AUDIOQUEUE_BUFFER_MIN = timeMin * PA_SAMPLE_RATE;
+	AUDIOQUEUE_BUFFER_MIN = timeMin * PA_SAMPLE_RATE * PA_OUTPUT_CHANNELS;
 
 	std::thread ndiThread(NDIAudioTread);
-	//std::thread sndfile(sndfileRead);
 	std::thread portaudio(portAudioOutputThread);
 
 	ndiThread.	join();
-	//sndfile.	join();
 	portaudio.	join();
 	return 0;
 }
