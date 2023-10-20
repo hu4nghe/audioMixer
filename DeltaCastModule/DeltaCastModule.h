@@ -7,16 +7,20 @@
 #include "VideoMasterHD_Dv.h"
 #include "VideoMasterHD_Dv_Audio.h"
 
-class HDMIAudioStreamList
+class HDMIAudioStream
 {
-public :
+public:
+	HDMIAudioStream();
+   ~HDMIAudioStream();
+	bool hardwareInfoCheck();
+	bool videoStreamInfocheck();
+	void getAudioData(const int PA_SAMPLE_RATE, const int PA_OUTPUT_CHANNELS);
 
-	HDMIAudioStreamList() = default;
-   ~HDMIAudioStreamList() = default;
+private:
+	HANDLE boardHandle;
+	HANDLE streamHandle;
+	HANDLE slotHandle;
+};
 
-    bool HDMIValidityCheck()
-	
-private : 
-	
 
 #endif
