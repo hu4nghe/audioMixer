@@ -97,6 +97,9 @@
   <ItemGroup>
     <ClCompile Include="..\src\audioMixer.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="audioMixer.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -10,6 +10,7 @@
 class HDMIAudioStream
 {
 public:
+<<<<<<< HEAD
 	HDMIAudioStream();
    ~HDMIAudioStream();
 	bool hardwareInfoCheck();
@@ -22,5 +23,18 @@ private:
 	HANDLE slotHandle;
 };
 
+=======
 
+	HDMIAudioStreamList() = default;
+	~HDMIAudioStreamList() = default;
+
+	bool HDMICheck();
+	bool HDMIAudioRecv(const int PA_SAMPLE_RATE, const int PA_OUTPUT_CHANNELS);
+	
+>>>>>>> 2b8ac42f9af21b6a69306f1a92c131c931f09683
+
+
+private:
+
+};
 #endif
