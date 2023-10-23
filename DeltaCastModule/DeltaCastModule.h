@@ -13,7 +13,7 @@ public:
 	HDMIAudioStream();
    ~HDMIAudioStream();
 	bool hardwareInfoCheck();
-	bool videoStreamInfocheck();
+	bool videoStreamInfoCheck();
 	void getAudioData(const int PA_SAMPLE_RATE, const int PA_OUTPUT_CHANNELS);
 
 private:
