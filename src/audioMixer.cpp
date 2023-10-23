@@ -112,11 +112,11 @@ static int portAudioOutputCallback(	const	                    void*	inputBuffer,
 	{
 		if (currentAudioQueue.pop(out, framesPerBuffer, true))//pop in addition mode, return true if successefully poped.
 		{
-			//calculate and print infoss
+			/*debug info
 			auto samplePlayedPerSecond = static_cast<uint64_t>(currentAudioQueue.sampleRate()) * currentAudioQueue.channels();
 			std::print("{}  elements	|	{}  seconds.\n",
 					   currentAudioQueue.size(),
-					   currentAudioQueue.size() / samplePlayedPerSecond);
+					   currentAudioQueue.size() / samplePlayedPerSecond);*/
 		}
 		else
 			std::print("Min buffer size reached, add more audio data to continue!\n");

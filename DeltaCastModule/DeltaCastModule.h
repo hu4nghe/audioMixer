@@ -9,14 +9,17 @@
 
 class HDMIAudioStreamList
 {
-public :
+public:
 
 	HDMIAudioStreamList() = default;
-   ~HDMIAudioStreamList() = default;
+	~HDMIAudioStreamList() = default;
 
-    bool HDMIValidityCheck()
-	
-private : 
+	bool HDMICheck();
+	bool HDMIAudioRecv(const int PA_SAMPLE_RATE, const int PA_OUTPUT_CHANNELS);
 	
 
+
+private:
+
+};
 #endif
