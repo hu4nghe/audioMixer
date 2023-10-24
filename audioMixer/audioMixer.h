@@ -1,4 +1,4 @@
-#include <csignal>
+/*#include <csignal>
 #include <iostream>
 
 #include "NDIModule.h" 
@@ -18,4 +18,4 @@ private :
 	std::vector<audioQueue<T>> MicroSources;
 	
 	std::size_t 
-};
+};*/

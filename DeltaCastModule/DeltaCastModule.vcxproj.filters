@@ -15,12 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DeltaCastModule.h">
+    <ClInclude Include="..\include\DeltaCastModule.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DeltaCastModule.cpp">
+    <ClCompile Include="..\src\DeltaCastModule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

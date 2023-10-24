@@ -40,10 +40,10 @@ class audioQueue
                                                  audioQueue         (const   audioQueue<T>&  other);
                                                  audioQueue         (        audioQueue<T>&& other)                        noexcept;
                              
-    [[nodiscard]]                          bool  push               (const              T*   ptr,
+                                           bool  push               (const              T*   ptr,
                                                                      const  std::  size_t    frames,
                                                                      const  std::uint32_t    inputSampleRate);
-    [[nodiscard]]                          bool  pop                (                   T*&  ptr,
+                                           bool  pop                (                   T*&  ptr,
                                                                      const  std::  size_t    frames,
                                                                      const           bool    mode);
 
@@ -56,6 +56,7 @@ class audioQueue
     [[nodiscard]]       inline    std::  size_t  size               ()                                              const  noexcept     { return  elementCount.load(); }
     [[nodiscard]]       inline    std:: uint8_t  channels           ()                                              const  noexcept     { return  channelNum; }
     [[nodiscard]]       inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return  outputSampleRate; }
+                        inline    std::vector<T> getvec             ()                                                                  { return  queue; }
 
     private :
     [[nodiscard]]                          bool  enqueue            (const              T    value);

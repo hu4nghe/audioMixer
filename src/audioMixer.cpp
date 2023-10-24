@@ -5,6 +5,7 @@
 #include "SoundFileModule.h"
 #include "portaudio.h"
 #include "audioQueue.h"
+#include "DeltaCastModule.h"
 
 #pragma region System signal handler
 /**
@@ -28,6 +29,7 @@ auto AUDIOQUEUE_BUFFER_MIN	= 4410;
 
 std::vector<audioQueue<float>> NDIdata;
 std::vector<audioQueue<float>> SNDdata;
+std::vector<audioQueue<float>> DeltaCastDATA;
 
 std::atomic<bool> NDIselectReady(false);
 #pragma endregion
@@ -108,18 +110,23 @@ static int portAudioOutputCallback(	const	                    void*	inputBuffer,
 	//Set output buffer to zero by default to avoid noise when there is no input.
 	memset(out, 0, sizeof(out) * framesPerBuffer);
 	//for every audioQueue in the list
+	/*
 	for (auto& currentAudioQueue : NDIdata)
 	{
 		if (currentAudioQueue.pop(out, framesPerBuffer, true))//pop in addition mode, return true if successefully poped.
 		{
-			/*debug info
+			debug info
 			auto samplePlayedPerSecond = static_cast<uint64_t>(currentAudioQueue.sampleRate()) * currentAudioQueue.channels();
 			std::print("{}  elements	|	{}  seconds.\n",
 					   currentAudioQueue.size(),
-					   currentAudioQueue.size() / samplePlayedPerSecond);*/
+					   currentAudioQueue.size() / samplePlayedPerSecond);
 		}
 		else
 			std::print("Min buffer size reached, add more audio data to continue!\n");
+	}*/
+	for (auto& currentAudioQueue : DeltaCastDATA)
+	{
+		currentAudioQueue.pop(out, framesPerBuffer, true);
 	}
 	return paContinue;
 }
@@ -142,8 +149,8 @@ void portAudioOutputThread()
 										PA_BUFFER_SIZE,					
 										portAudioOutputCallback,
 										nullptr));
-	while(!NDIselectReady.load(std::memory_order_acquire)){}
-	bool PaActiveFlag = false;
+	Pa_StartStream(streamOut);
+	bool PaActiveFlag = true;
 	while (!exit_loop)
 	{
 		char ch = getchar();
@@ -170,7 +177,14 @@ void portAudioOutputThread()
 }
 #pragma endregion
 
-
+void DeltaCastThread()
+{
+	DeltaCastRecv(DeltaCastDATA,
+		PA_SAMPLE_RATE,
+		PA_OUTPUT_CHANNELS,
+		AUDIOQUEUE_BUFFER_MAX,
+		AUDIOQUEUE_BUFFER_MIN);
+}
 
 int main()
 {	
@@ -191,10 +205,12 @@ int main()
 
 	AUDIOQUEUE_BUFFER_MIN = timeMin * PA_SAMPLE_RATE * PA_OUTPUT_CHANNELS;
 
-	std::thread ndiThread(NDIAudioTread);
+	//std::thread ndiThread(NDIAudioTread);
 	std::thread portaudio(portAudioOutputThread);
+	std::thread deltaCast(DeltaCastThread);
 
-	ndiThread.	join();
-	portaudio.	join();
+	//ndiThread.join();
+	portaudio.join();
+	deltaCast.join();
 	return 0;
 }
