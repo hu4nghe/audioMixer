@@ -372,3 +372,4 @@ FodyWeavers.xsd
 /lib/NDIModule.lib
 /lib/NDIModule.pdb
 *.exe
+/lib/DeltaCastModule.lib
