@@ -90,18 +90,36 @@ void HDMIAudioStream::getAudioData(const int PA_SAMPLE_RATE, const int PA_OUTPUT
 
 void Convert24bitTo32Bit(const uint8_t* sourceAudio, size_t sourceSize, float* destinationAudio, size_t destinationSize)
 {
-        const float scale = 1.0 / static_cast<float>(1 << 23); // 2^23 for 24-bit
+        const int32_t   Max24BitValue = (1 << 23);
+        const float     scale = 1.0 / static_cast<float>(Max24BitValue); // 2^23 for 24-bit
 
         for (size_t i = 0; i < sourceSize; i += 3)
         {
             uint32_t sample24 = static_cast<uint32_t>(sourceAudio[i    ] << 16) | 
                                 static_cast<uint32_t>(sourceAudio[i + 1] << 8 ) | 
                                 static_cast<uint32_t>(sourceAudio[i + 2]);
+            
+            int32_t signedSample24 = static_cast<int32_t>(sample24) - Max24BitValue;
+            float sample32 = static_cast<float>(signedSample24) * scale ;
 
-            float sample32 = static_cast<float>(sample24) * scale *100;
             if (i / 3 < destinationSize)
                 destinationAudio[i / 3] = sample32;
         }
+}
+float convertToFloat(const unsigned char* data) 
+{
+    // Extract 24-bit data from 3 bytes
+    uint32_t sample24 = static_cast<uint32_t>(data[0] << 16) |
+        static_cast<uint32_t>(data[1] << 8) |
+        static_cast<uint32_t>(data[2]);
+
+    const int32_t Max24BitValue = (1 << 23) - 1;  // 2^23 - 1
+    // Map to signed integer range
+    int32_t signedSample24 = static_cast<int32_t>(sample24) - Max24BitValue;
+
+    // Map to [-1, 1] float range
+    float result = static_cast<float>(signedSample24) / 8388607.0f;
+    return result;
 }
 
 void DeltaCastRecv(         std::vector<audioQueue<float>>& queue,

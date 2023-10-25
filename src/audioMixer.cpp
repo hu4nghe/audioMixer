@@ -184,6 +184,9 @@ void DeltaCastThread()
 		PA_OUTPUT_CHANNELS,
 		AUDIOQUEUE_BUFFER_MAX,
 		AUDIOQUEUE_BUFFER_MIN);
+	
+	return;
+
 }
 
 int main()
