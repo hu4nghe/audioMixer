@@ -15,7 +15,7 @@
 
   Author  : ac                             Date: 2018/02/28
 
-  Purpose : DV stands for « Digital Video » and regroups the following technologies: DVI, HDMI, DisplayPort.
+  Purpose : DV stands for ï¿½ Digital Video ï¿½ and regroups the following technologies: DVI, HDMI, DisplayPort.
 
 */
 
@@ -426,11 +426,11 @@ typedef enum _VHD_DV_CS
    VHD_DV_CS_ADOBE_YCC_601,         /*! Adobe YCC 601 color space */
    VHD_DV_CS_ADOBE_RGB,             /*! Adobe RGB color space */
    VHD_DV_CS_BT2020_YCCBCCRC,       /*! ITU-R BT.2020 Y'cC'bcC'rc color space*/
-   VHD_DV_CS_BT2020_RGB_LIMITED,    /*! ITU-R BT.2020 R’G’B’ LIMITED color space*/
-   VHD_DV_CS_BT2020_RGB_FULL,       /*! ITU-R BT.2020 R’G’B’ FULL color space*/
+   VHD_DV_CS_BT2020_RGB_LIMITED,    /*! ITU-R BT.2020 Rï¿½Gï¿½Bï¿½ LIMITED color space*/
+   VHD_DV_CS_BT2020_RGB_FULL,       /*! ITU-R BT.2020 Rï¿½Gï¿½Bï¿½ FULL color space*/
    VHD_DV_CS_BT2020_YCBCR,          /*! ITU-R BT.2020 Y'C'bC'r color space*/
-   VHD_DV_CS_DCI_P3_RGB_D65,        /*! DCI-P3 R’G’B’(D65) color space*/
-   VHD_DV_CS_DCI_P3_RGB_THEATER,    /*! DCI-P3 R’G’B’ (theater) color space*/
+   VHD_DV_CS_DCI_P3_RGB_D65,        /*! DCI-P3 Rï¿½Gï¿½Bï¿½(D65) color space*/
+   VHD_DV_CS_DCI_P3_RGB_THEATER,    /*! DCI-P3 Rï¿½Gï¿½Bï¿½ (theater) color space*/
    NB_VHD_DV_CS
 } VHD_DV_CS;
 
