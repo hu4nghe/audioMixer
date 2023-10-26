@@ -3,7 +3,9 @@
 #include "VideoMasterHD_Core.h"
 #include "VideoMasterHD_Dv.h"
 #include "VideoMasterHD_Dv_Audio.h"
+#include "sndfile.h"
 #include "DeltaCastModule.h"
+#include <functional>
 /*
 HDMIAudioStream::HDMIAudioStream()
 {
@@ -88,39 +90,60 @@ void HDMIAudioStream::getAudioData(const int PA_SAMPLE_RATE, const int PA_OUTPUT
 }
 */
 
-void Convert24bitTo32Bit(const uint8_t* sourceAudio, size_t sourceSize, float* destinationAudio, size_t destinationSize)
+bool combineBYTETo24Bit(const uint8_t* sourceAudio, int sourceSize, int32_t* combined24bit)
 {
-        const int32_t   Max24BitValue = (1 << 23);
-        const float     scale = 1.0 / static_cast<float>(Max24BitValue); // 2^23 for 24-bit
-
-        for (size_t i = 0; i < sourceSize; i += 3)
+    if (sourceSize % 3 != 0)
+    {
+        std::print("HDMI Audio Error : Invalid buffer size for 24 - bit audio data.\n");
+        return false;
+    }
+    else
+    {
+        for (auto i = 0, j = 0; i < sourceSize; i += 3, ++j)
         {
-            uint32_t sample24 = static_cast<uint32_t>(sourceAudio[i    ] << 16) | 
-                                static_cast<uint32_t>(sourceAudio[i + 1] << 8 ) | 
-                                static_cast<uint32_t>(sourceAudio[i + 2]);
-            
-            int32_t signedSample24 = static_cast<int32_t>(sample24) - Max24BitValue;
-            float sample32 = static_cast<float>(signedSample24) * scale ;
-
-            if (i / 3 < destinationSize)
-                destinationAudio[i / 3] = sample32;
+            uint32_t sample24 = static_cast<uint32_t>(sourceAudio[i] << 16) |
+                static_cast<uint32_t>(sourceAudio[i + 1] << 8) |
+                static_cast<uint32_t>(sourceAudio[i + 2]);
+            combined24bit[j] = sample24;
         }
+    }
+    return true;
 }
-float convertToFloat(const unsigned char* data) 
+
+float* decodeAndConvertToFloat(int32_t* pcmData, size_t numSamples, float* floatData)
 {
-    // Extract 24-bit data from 3 bytes
-    uint32_t sample24 = static_cast<uint32_t>(data[0] << 16) |
-        static_cast<uint32_t>(data[1] << 8) |
-        static_cast<uint32_t>(data[2]);
+    SNDFILE* sndFile;
 
-    const int32_t Max24BitValue = (1 << 23) - 1;  // 2^23 - 1
-    // Map to signed integer range
-    int32_t signedSample24 = static_cast<int32_t>(sample24) - Max24BitValue;
+    SF_INFO sfInfo;
+    std::memset(&sfInfo, 0, sizeof(sfInfo));
 
-    // Map to [-1, 1] float range
-    float result = static_cast<float>(signedSample24) / 8388607.0f;
-    return result;
+    sfInfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
+    sfInfo.samplerate = 44100;
+
+    SF_VIRTUAL_IO virtualIO;
+
+    auto read = [](void* user_data, void* data, sf_count_t count) -> sf_count_t
+    {
+        int32_t* pcmData = static_cast<int32_t*>(user_data);
+        std::memcpy(data, pcmData, count);
+        return count;
+    };
+    std::function<sf_count_t(void*, void*, sf_count_t)> readFunction = read;
+    virtualIO.read = reinterpret_cast<sf_vio_read>(readFunction.target<void(void*, void*, sf_count_t)>());
+
+
+    virtualIO.get_filelen = nullptr;
+    virtualIO.seek = nullptr;
+     
+
+    sndFile = sf_open_virtual(&virtualIO, SFM_READ, &sfInfo, pcmData);
+    sf_readf_float(sndFile, floatData, numSamples);
+    sf_close(sndFile);
+
+    return floatData;
 }
+
+
 
 void DeltaCastRecv(         std::vector<audioQueue<float>>& queue,
                     const	std::uint32_t	                PA_SAMPLE_RATE,
@@ -258,15 +281,18 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>& queue,
                                                                                 {
                                                                                     VHD_SlotExtractDvPCMAudio(SlotHandle, VHD_DVAUDIOFORMAT_24, 0x3, nullptr, &BufferSize);
                                                                                     pAudioBuffer = new UBYTE[BufferSize];
-                                                                                    size_t floatBufferSize = BufferSize / 3; // Assuming 3 bytes per 24-bit sample
-                                                                                    float* destinationAudio = new float[floatBufferSize];
+                                                                                    size_t combinedBufferSize = BufferSize / 3; // Assuming 3 bytes per 24-bit sample
+                                                                                    int32_t* combined24bit = new int32_t[combinedBufferSize];
+                                                                                    float* float32bit = new float[combinedBufferSize];
                                                                                     Result = VHD_SlotExtractDvPCMAudio(SlotHandle, VHD_DVAUDIOFORMAT_24, 0x3, pAudioBuffer, &BufferSize);
                                                                                     if (Result == VHDERR_NOERROR)
                                                                                     {
-                                                                                        Convert24bitTo32Bit(pAudioBuffer, BufferSize, destinationAudio, floatBufferSize);
+                                                                                        combineBYTETo24Bit(pAudioBuffer, BufferSize, combined24bit);
+                                                                                        decodeAndConvertToFloat(combined24bit, combinedBufferSize, float32bit);
+
                                                                                         audioQueue<float> HDMIAudio(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, BUFFER_MAX, BUFFER_MIN);
                                                                                         
-                                                                                        HDMIAudio.push(destinationAudio, floatBufferSize / PA_OUTPUT_CHANNELS, 44100);
+                                                                                        HDMIAudio.push(float32bit, combinedBufferSize, 44100);
 
                                                                                         queue.push_back(HDMIAudio);
                                                                                     }
@@ -274,6 +300,9 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>& queue,
                                                                                     {
                                                                                         printf("\nERROR : Cannot get PCM audio slot buffer.");
                                                                                     }
+                                                                                    delete[] combined24bit;
+                                                                                    delete[] float32bit;
+                                                                                    
                                                                                 }
                                                                                 if (pAudioBuffer)
                                                                                 {
