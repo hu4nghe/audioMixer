@@ -90,9 +90,11 @@ void HDMIAudioStream::getAudioData(const int PA_SAMPLE_RATE, const int PA_OUTPUT
 }
 */
 
-bool combineBYTETo24Bit(const uint8_t* sourceAudio, int sourceSize, int32_t* combined24bit)
+bool combineBYTETo24Bit(        const std::uint8_t* sourceAudio, 
+                                const std:: size_t  sourceSize, 
+                                      std::int32_t* combined24bit)
 {
-    if (sourceSize % 3 != 0)
+    if (sourceSize % 3)
     {
         std::print("HDMI Audio Error : Invalid buffer size for 24 - bit audio data.\n");
         return false;
@@ -101,42 +103,46 @@ bool combineBYTETo24Bit(const uint8_t* sourceAudio, int sourceSize, int32_t* com
     {
         for (auto i = 0, j = 0; i < sourceSize; i += 3, ++j)
         {
-            uint32_t sample24 = static_cast<uint32_t>(sourceAudio[i] << 16) |
-                static_cast<uint32_t>(sourceAudio[i + 1] << 8) |
-                static_cast<uint32_t>(sourceAudio[i + 2]);
+            std::uint32_t sample24 = static_cast<std::uint32_t>(sourceAudio[i    ] << 16) |
+                                     static_cast<std::uint32_t>(sourceAudio[i + 1] << 8 ) |
+                                     static_cast<std::uint32_t>(sourceAudio[i + 2]);
             combined24bit[j] = sample24;
         }
     }
     return true;
 }
 
-float* decodeAndConvertToFloat(int32_t* pcmData, size_t numSamples, float* floatData)
+float* decodeAndConvertToFloat( const std::int32_t* pcmData, 
+                                const std:: size_t  numSamples, 
+                                             float* floatData)
 {
-    SNDFILE* sndFile;
-
-    SF_INFO sfInfo;
-    std::memset(&sfInfo, 0, sizeof(sfInfo));
-
-    sfInfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
-    sfInfo.samplerate = 44100;
-
-    SF_VIRTUAL_IO virtualIO;
-
-    auto read = [](void* user_data, void* data, sf_count_t count) -> sf_count_t
+    auto read = [](void* data, sf_count_t count,void* user_data ) -> sf_count_t
     {
-        int32_t* pcmData = static_cast<int32_t*>(user_data);
+        std::int32_t* pcmData = static_cast<std::int32_t*>(user_data);
         std::memcpy(data, pcmData, count);
         return count;
     };
-    std::function<sf_count_t(void*, void*, sf_count_t)> readFunction = read;
-    virtualIO.read = reinterpret_cast<sf_vio_read>(readFunction.target<void(void*, void*, sf_count_t)>());
+
+    SNDFILE*    sndFile;
+    SF_INFO     sfInfo;
+
+    std::memset(&sfInfo, 0, sizeof(sfInfo));
+
+    sfInfo.format       = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
+    sfInfo.samplerate   = 44100;
+
+    SF_VIRTUAL_IO virtualIO;
+
+    
+    std::function<sf_count_t(void*, sf_count_t, void*)> readFunction = read;
+    virtualIO.read = reinterpret_cast<sf_vio_read>(readFunction.target<void(void*, sf_count_t, void*)>());
 
 
     virtualIO.get_filelen = nullptr;
     virtualIO.seek = nullptr;
      
 
-    sndFile = sf_open_virtual(&virtualIO, SFM_READ, &sfInfo, pcmData);
+    sndFile = sf_open_virtual(&virtualIO, SFM_READ, &sfInfo, (void*)pcmData);
     sf_readf_float(sndFile, floatData, numSamples);
     sf_close(sndFile);
 
@@ -145,36 +151,45 @@ float* decodeAndConvertToFloat(int32_t* pcmData, size_t numSamples, float* float
 
 
 
-void DeltaCastRecv(         std::vector<audioQueue<float>>& queue,
-                    const	std::uint32_t	                PA_SAMPLE_RATE,
-                    const   std::uint32_t	                PA_OUTPUT_CHANNELS,
-                    const   std::uint32_t	                BUFFER_MAX,
-                    const	std::uint32_t	                BUFFER_MIN)
+void DeltaCastRecv(         std::vector<audioQueue<float>>&     queue,
+                    const	std::               uint32_t	    PA_SAMPLE_RATE,
+                    const   std::               uint32_t	    PA_OUTPUT_CHANNELS,
+                    const   std::               uint32_t	    BUFFER_MAX,
+                    const	std::               uint32_t	    BUFFER_MIN)
 {
-    ULONG                      Result, DllVersion, NbBoards, BoardType;
-    ULONG                      NbFramesRecv = 0, NbFramesDropped = 0, BufferSize = 0, AudioBufferSize = 0, PxlClk = 0;
-    HANDLE                     BoardHandle = nullptr, StreamHandle = nullptr, SlotHandle = nullptr;
-    ULONG                      Height = 0, Width = 0, RefreshRate = 0;
+    unsigned long errorCode = 0;
+    
+    unsigned long              PxlClk = 0;
+    void* BoardHandle = nullptr;
+    void* StreamHandle = nullptr;
+    void* SlotHandle = nullptr;
+    unsigned char* pBuffer = nullptr;
+    unsigned char* pAudioBuffer = nullptr;
+    
     VHD_DV_MODE                DvMode = NB_VHD_DV_MODES;
-    ULONG                      BrdId = 0;
-    BOOL32                     Interlaced = FALSE;
-    BOOL32                     IsHdmiBoard = FALSE;
-    BYTE*                      pBuffer = nullptr, * pAudioBuffer = nullptr;
     VHD_DV_CS                  InputCS;
     VHD_DV_AUDIO_TYPE          HDMIAudioType;
     VHD_DV_AUDIO_INFOFRAME     HDMIAudioInfoFrame;
     VHD_DV_AUDIO_AES_STS       HDMIAudioAESSts;
 
+    //debug info
+    //unsigned long NbFramesRecv = 0;
+    //unsigned long NbFramesDropped = 0;
+
     /* Query VideoMaster information */
-    Result = VHD_GetApiInfo(&DllVersion, &NbBoards);
-    if (Result == VHDERR_NOERROR)
+    unsigned long nbBoards = 0;
+    errorCode = VHD_GetApiInfo(nullptr, &nbBoards);//We do not care about dll versio
+    if (errorCode == VHDERR_NOERROR)
     {
-        if (NbBoards > 0)
+        if (nbBoards > 0)
         {
+            unsigned long BrdId = 0;
             /* Open a handle on selected DELTA board */
-            Result = VHD_OpenBoardHandle(BrdId, &BoardHandle, nullptr, 0);
-            if (Result == VHDERR_NOERROR)
+            errorCode = VHD_OpenBoardHandle(BrdId, &BoardHandle, nullptr, 0);
+            if (errorCode == VHDERR_NOERROR)
             {
+                unsigned long BoardType = 0;
+                bool IsHdmiBoard = false;
                 VHD_GetBoardProperty(BoardHandle, VHD_CORE_BP_BOARD_TYPE, &BoardType);
                 IsHdmiBoard = ((BoardType == VHD_BOARDTYPE_HDMI) || (BoardType == VHD_BOARDTYPE_HDMI20) || (BoardType == VHD_BOARDTYPE_FLEX_HMI) || (BoardType == VHD_BOARDTYPE_MIXEDINTERFACE));
 
@@ -182,60 +197,63 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>& queue,
                 if (IsHdmiBoard)
                 {
                     /* Create a logical stream to receive from RX0 connector */
-                    Result = VHD_OpenStreamHandle(BoardHandle, VHD_ST_RX0, IsHdmiBoard ? VHD_DV_STPROC_JOINED : VHD_DV_STPROC_DEFAULT, nullptr, &StreamHandle, nullptr);
-                    if (Result == VHDERR_NOERROR)
+                    errorCode = VHD_OpenStreamHandle(BoardHandle, VHD_ST_RX0, IsHdmiBoard ? VHD_DV_STPROC_JOINED : VHD_DV_STPROC_DEFAULT, nullptr, &StreamHandle, nullptr);
+                    if (errorCode == VHDERR_NOERROR)
                     {
                         /* Set the primary mode of this channel to HDMI */
-                        Result = VHD_SetStreamProperty(StreamHandle, VHD_DV_SP_MODE, VHD_DV_MODE_HDMI);
-                        if (Result == VHDERR_NOERROR)
+                        errorCode = VHD_SetStreamProperty(StreamHandle, VHD_DV_SP_MODE, VHD_DV_MODE_HDMI);
+                        if (errorCode == VHDERR_NOERROR)
                         {
                             printf("Waiting for incoming HDMI signal... Press any key to stop...\n");
                             do
                             {
                                 /* Auto-detect Dv mode */
-                                Result = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_MODE, (ULONG*)&DvMode);
-                            } while (DvMode != VHD_DV_MODE_HDMI || Result != VHDERR_NOERROR);
+                                errorCode = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_MODE, (ULONG*)&DvMode);
+                            } while (DvMode != VHD_DV_MODE_HDMI || errorCode != VHDERR_NOERROR);
 
-                            if (Result == VHDERR_NOERROR && DvMode == VHD_DV_MODE_HDMI)
+                            if (errorCode == VHDERR_NOERROR && DvMode == VHD_DV_MODE_HDMI)
                             {
                                 /* Configure RGBA reception (no color-space conversion) */
                                 VHD_SetStreamProperty(StreamHandle, VHD_CORE_SP_BUFFER_PACKING, VHD_BUFPACK_VIDEO_RGB_32);
                                 VHD_SetStreamProperty(StreamHandle, VHD_CORE_SP_TRANSFER_SCHEME, VHD_TRANSFER_SLAVED);
 
+                                unsigned long height = 0;
+                                unsigned long width = 0;
+                                unsigned long refreshRate = 0;
+                                bool Interlaced = false;
+
                                 /* Get auto-detected resolution */
-                                Result = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_ACTIVE_WIDTH, &Width);
-                                if (Result == VHDERR_NOERROR)
+                                errorCode = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_ACTIVE_WIDTH, &width);
+                                if (errorCode == VHDERR_NOERROR)
                                 {
-                                    std::print("2 reached.\n");
-                                    Result = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_ACTIVE_HEIGHT, &Height);
-                                    if (Result == VHDERR_NOERROR)
+                                    errorCode = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_ACTIVE_HEIGHT, &height);
+                                    if (errorCode == VHDERR_NOERROR)
                                     {
-                                        std::print("3 reached.\n");
-                                        Result = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_INTERLACED, (ULONG*)&Interlaced);
-                                        if (Result == VHDERR_NOERROR)
+                                        errorCode = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_INTERLACED, (ULONG*)&Interlaced);
+                                        if (errorCode == VHDERR_NOERROR)
                                         {
-                                            Result = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_REFRESH_RATE, &RefreshRate);
-                                            if (Result == VHDERR_NOERROR)
+                                            errorCode = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_REFRESH_RATE, &refreshRate);
+                                            if (errorCode == VHDERR_NOERROR)
                                             {
                                                 if (IsHdmiBoard)
-                                                    Result = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_INPUT_CS, (ULONG*)&InputCS);
+                                                    errorCode = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_INPUT_CS, (ULONG*)&InputCS);
 
-                                                if (Result == VHDERR_NOERROR)
+                                                if (errorCode == VHDERR_NOERROR)
                                                 {
                                                     if (IsHdmiBoard)
-                                                        Result = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_PIXEL_CLOCK, &PxlClk);
+                                                        errorCode = VHD_GetStreamProperty(StreamHandle, VHD_DV_SP_PIXEL_CLOCK, &PxlClk);
                                                     std::print("4 reached.\n");
-                                                    if (Result == VHDERR_NOERROR)
+                                                    if (errorCode == VHDERR_NOERROR)
                                                     {
-                                                        printf("\nIncoming graphic resolution : %ux%u (%s)\n", Width, Height, Interlaced ? "Interlaced" : "Progressive");
+                                                        printf("\nIncoming graphic resolution : %ux%u (%s)\n", width, height, Interlaced ? "Interlaced" : "Progressive");
 
                                                         /* Configure stream. Only VHD_DV_SP_ACTIVE_WIDTH, VHD_DV_SP_ACTIVE_HEIGHT,
                                                         VHD_DV_SP_INTERLACED and VHD_DV_SP_REFRESH_RATE properties are required for HDMI */
 
-                                                        VHD_SetStreamProperty(StreamHandle, VHD_DV_SP_ACTIVE_WIDTH, Width);
-                                                        VHD_SetStreamProperty(StreamHandle, VHD_DV_SP_ACTIVE_HEIGHT, Height);
+                                                        VHD_SetStreamProperty(StreamHandle, VHD_DV_SP_ACTIVE_WIDTH, width);
+                                                        VHD_SetStreamProperty(StreamHandle, VHD_DV_SP_ACTIVE_HEIGHT, height);
                                                         VHD_SetStreamProperty(StreamHandle, VHD_DV_SP_INTERLACED, Interlaced);
-                                                        VHD_SetStreamProperty(StreamHandle, VHD_DV_SP_REFRESH_RATE, RefreshRate);
+                                                        VHD_SetStreamProperty(StreamHandle, VHD_DV_SP_REFRESH_RATE, refreshRate);
 
                                                         /* VHD_DV_SP_INPUT_CS and VHD_DV_SP_PIXEL_CLOCK are required for DELTA-h4k only */
                                                         if (BoardType == VHD_BOARDTYPE_HDMI)
@@ -245,8 +263,8 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>& queue,
                                                         }
 
                                                         /* Start stream */
-                                                        Result = VHD_StartStream(StreamHandle);
-                                                        if (Result == VHDERR_NOERROR)
+                                                        errorCode = VHD_StartStream(StreamHandle);
+                                                        if (errorCode == VHDERR_NOERROR)
                                                         {
                                                             printf("\nReception started\n");
 
@@ -254,12 +272,13 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>& queue,
                                                             while (1)
                                                             {
                                                                 /* Try to lock next slot */
-                                                                Result = VHD_LockSlotHandle(StreamHandle, &SlotHandle);
+                                                                errorCode = VHD_LockSlotHandle(StreamHandle, &SlotHandle);
 
-                                                                if (Result == VHDERR_NOERROR)
-                                                                {
-                                                                    Result = VHD_GetSlotBuffer(SlotHandle, VHD_DV_BT_VIDEO, &pBuffer, &BufferSize);
-                                                                    if (Result == VHDERR_NOERROR)
+                                                                if (errorCode == VHDERR_NOERROR)
+                                                                {   
+                                                                    unsigned long bufferSize = 0;
+                                                                    errorCode = VHD_GetSlotBuffer(SlotHandle, VHD_DV_BT_VIDEO, &pBuffer, &bufferSize);
+                                                                    if (errorCode == VHDERR_NOERROR)
                                                                     {
                                                                         /* Do RX data processing here on pBuffer */
                                                                     }
@@ -271,23 +290,23 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>& queue,
                                                                     if (IsHdmiBoard)
                                                                     {
                                                                         /* Do RX data processing here on pBuffer */
-                                                                        Result = VHD_GetSlotDvAudioInfo(SlotHandle, &HDMIAudioType, &HDMIAudioInfoFrame, &HDMIAudioAESSts);
-                                                                        if (Result == VHDERR_NOERROR)
+                                                                        errorCode = VHD_GetSlotDvAudioInfo(SlotHandle, &HDMIAudioType, &HDMIAudioInfoFrame, &HDMIAudioAESSts);
+                                                                        if (errorCode == VHDERR_NOERROR)
                                                                         {
                                                                             if (HDMIAudioType != VHD_DV_AUDIO_TYPE_NONE)
                                                                             {
-                                                                                BufferSize = 0;
+                                                                                bufferSize = 0;
                                                                                 if (HDMIAudioAESSts.LinearPCM == VHD_DV_AUDIO_AES_SAMPLE_STS_LINEAR_PCM_SAMPLE)
                                                                                 {
-                                                                                    VHD_SlotExtractDvPCMAudio(SlotHandle, VHD_DVAUDIOFORMAT_24, 0x3, nullptr, &BufferSize);
-                                                                                    pAudioBuffer = new UBYTE[BufferSize];
-                                                                                    size_t combinedBufferSize = BufferSize / 3; // Assuming 3 bytes per 24-bit sample
+                                                                                    VHD_SlotExtractDvPCMAudio(SlotHandle, VHD_DVAUDIOFORMAT_24, 0x3, nullptr, &bufferSize);
+                                                                                    pAudioBuffer = new UBYTE[bufferSize];
+                                                                                    size_t combinedBufferSize = bufferSize / 3; // Assuming 3 bytes per 24-bit sample
                                                                                     int32_t* combined24bit = new int32_t[combinedBufferSize];
                                                                                     float* float32bit = new float[combinedBufferSize];
-                                                                                    Result = VHD_SlotExtractDvPCMAudio(SlotHandle, VHD_DVAUDIOFORMAT_24, 0x3, pAudioBuffer, &BufferSize);
-                                                                                    if (Result == VHDERR_NOERROR)
+                                                                                    errorCode = VHD_SlotExtractDvPCMAudio(SlotHandle, VHD_DVAUDIOFORMAT_24, 0x3, pAudioBuffer, &bufferSize);
+                                                                                    if (errorCode == VHDERR_NOERROR)
                                                                                     {
-                                                                                        combineBYTETo24Bit(pAudioBuffer, BufferSize, combined24bit);
+                                                                                        combineBYTETo24Bit(pAudioBuffer, bufferSize, combined24bit);
                                                                                         decodeAndConvertToFloat(combined24bit, combinedBufferSize, float32bit);
 
                                                                                         audioQueue<float> HDMIAudio(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, BUFFER_MAX, BUFFER_MIN);
@@ -322,12 +341,13 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>& queue,
                                                                     VHD_UnlockSlotHandle(SlotHandle);
 
                                                                     /* Print some statistics */
+                                                                    
                                                                     //VHD_GetStreamProperty(StreamHandle, VHD_CORE_SP_SLOTS_COUNT, &NbFramesRecv);
                                                                     //VHD_GetStreamProperty(StreamHandle, VHD_CORE_SP_SLOTS_DROPPED, &NbFramesDropped);
                                                                     //printf("%u frames received (%u dropped)            \r", NbFramesRecv, NbFramesDropped);
                                                                     //fflush(stdout);
                                                                 }
-                                                                else if (Result != VHDERR_TIMEOUT)
+                                                                else if (errorCode != VHDERR_TIMEOUT)
                                                                 {
                                                                     printf("\nERROR : Cannot lock slot on RX0 stream.");
                                                                     break;

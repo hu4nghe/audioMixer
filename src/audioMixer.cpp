@@ -110,24 +110,23 @@ static int portAudioOutputCallback(	const	                    void*	inputBuffer,
 	//Set output buffer to zero by default to avoid noise when there is no input.
 	memset(out, 0, sizeof(out) * framesPerBuffer);
 	//for every audioQueue in the list
-	/*
 	for (auto& currentAudioQueue : NDIdata)
 	{
 		if (currentAudioQueue.pop(out, framesPerBuffer, true))//pop in addition mode, return true if successefully poped.
 		{
-			debug info
 			auto samplePlayedPerSecond = static_cast<uint64_t>(currentAudioQueue.sampleRate()) * currentAudioQueue.channels();
-			std::print("{}  elements	|	{}  seconds.\n",
+			std::print("{}  samples	|	{}  ms.\n",
 					   currentAudioQueue.size(),
 					   currentAudioQueue.size() / samplePlayedPerSecond);
 		}
 		else
 			std::print("Min buffer size reached, add more audio data to continue!\n");
-	}*/
+	}
+	/*
 	for (auto& currentAudioQueue : DeltaCastDATA)
 	{
 		currentAudioQueue.pop(out, framesPerBuffer, true);
-	}
+	}*/
 	return paContinue;
 }
 
@@ -208,12 +207,12 @@ int main()
 
 	AUDIOQUEUE_BUFFER_MIN = timeMin * PA_SAMPLE_RATE * PA_OUTPUT_CHANNELS;
 
-	//std::thread ndiThread(NDIAudioTread);
+	std::thread ndiThread(NDIAudioTread);
 	std::thread portaudio(portAudioOutputThread);
-	std::thread deltaCast(DeltaCastThread);
+	//std::thread deltaCast(DeltaCastThread);
 
-	//ndiThread.join();
+	ndiThread.join();
 	portaudio.join();
-	deltaCast.join();
+	//deltaCast.join();
 	return 0;
 }
