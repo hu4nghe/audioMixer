@@ -31,14 +31,10 @@ std::vector<audioQueue<float>> NDIdata;
 std::vector<audioQueue<float>> SNDdata;
 std::vector<audioQueue<float>> DeltaCastData;
 
-std::atomic<bool> NDIselectReady(false);
+std::atomic<bool> InputReady(false);
 #pragma endregion
-
+/*
 #pragma region NDI Input
-/**
- * @brief Thread that capture audio input from NDI sources.
- * 
- */
 void NDIAudioTread()
 {
 	std::signal(SIGINT, sigIntHandler);
@@ -50,7 +46,7 @@ void NDIAudioTread()
 		std::print("no source found ! type any key to serach again\n");
 		std::cin.get();
 	}
-	NDIselectReady.store(true, std::memory_order_release);
+	InputReady.store(true, std::memory_order_release);
 	ndiSources.receiveAudio(NDIdata, 
 							PA_SAMPLE_RATE, 
 							PA_OUTPUT_CHANNELS, 
@@ -73,7 +69,7 @@ void sndfileRead()
 
 }
 #pragma endregion
-
+*/
 #pragma region DeltaCast input
 void DeltaCastThread()
 {
@@ -81,7 +77,7 @@ void DeltaCastThread()
 					PA_SAMPLE_RATE,
 					PA_OUTPUT_CHANNELS,
 					AUDIOQUEUE_BUFFER_MAX,
-				AUDIOQUEUE_BUFFER_MIN);
+					AUDIOQUEUE_BUFFER_MIN);
 	
 	return;
 
@@ -135,22 +131,24 @@ static int portAudioOutputCallback( const	                    void* inputBuffer,
 	//Set output buffer to zero by default to avoid noise when there is no input.
 	memset(out, 0, sizeof(out) * framesPerBuffer);
 	//for every audioQueue in the list
+	/*
 	for (auto& currentAudioQueue : NDIdata)
 	{
 		if (currentAudioQueue.pop(out, framesPerBuffer, true))//pop in addition mode, return true if successefully poped.
 		{
 			auto samplePlayedPerSecond = static_cast<uint64_t>(currentAudioQueue.sampleRate()) * currentAudioQueue.channels();
-			std::print("{}  samples	|	{}  ms.\n",
+			std::print("{}  samples | {} s.\n",
 					   currentAudioQueue.size(),
 					   currentAudioQueue.size() / samplePlayedPerSecond);
 		}
 		else
 			std::print("Min buffer size reached, add more audio data to continue!\n");
 	}*/
+	
 	for (auto& currentAudioQueue : DeltaCastData)
 	{
 		currentAudioQueue.pop(out, framesPerBuffer, true);
-	}*/
+	}
 	return paContinue;
 }
 
@@ -170,8 +168,7 @@ void PAOutputThread()
 										PA_BUFFER_SIZE,
 										portAudioOutputCallback,
 										nullptr));
-	Pa_StartStream(streamOut);
-	bool PaActiveFlag = true;
+	bool PaActiveFlag = false;
 	while (!exit_loop)
 	{
 		char ch = getchar();
@@ -200,14 +197,13 @@ void PAOutputThread()
 
 int main()
 {	
-	std::print("Configuration :\nplease enter output sample rate:(in Hz)\n");
-	std::cin >> PA_SAMPLE_RATE;
+	PAConfig();
 
-	std::thread ndiThread(NDIAudioTread);
+	//std::thread ndiThread(NDIAudioTread);
 	std::thread portaudio(PAOutputThread);
-	//std::thread deltaCast(DeltaCastThread);
+	std::thread deltaCast(DeltaCastThread);
 
-	ndiThread.join();
+	//ndiThread.join();
 	portaudio.join();
 	//deltaCast.join();
 	return 0;

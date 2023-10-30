@@ -285,17 +285,18 @@ bool audioQueue<T>::push               (const             T*   data,
                                         const std::uint32_t    inputSampleRate,
                                         const std:: uint8_t    inputNbChannel)
 {
-    const auto currentSize  = frames * inputNbchannel;    
+    const auto currentSize  = frames * inputNbChannel;    
     std::vector<T> temp(data, data + currentSize);
-
+    std::print("creation temp no souci\n\n");
     if (inputSampleRate != outputSampleRate) 
-        resample(temp, frames, inputSampleRate);
-
+        resample(temp, frames, inputSampleRate,inputNbChannel);
+    std::print("check resampling pas de souci\n\n");
     for (const auto &i : temp)
     {
         if (!this->enqueue(i))
             return false;
     }
+    std::print("push pas de souci\n\n");
     return true;
 }
 /**

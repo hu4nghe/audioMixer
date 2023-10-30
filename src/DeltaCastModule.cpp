@@ -8,91 +8,8 @@
 #include "sndfile.h"
 #include "DeltaCastModule.h"
 
-/*
-HDMIAudioStream::HDMIAudioStream()
-{
-					boardHandle		= nullptr;
-					streamHandle	= nullptr;
-					slotHandle		= nullptr;
-	unsigned long	result = 0;
-	unsigned long	DllVersion		= 0;
-	unsigned long	nbBoards		= 0;
-	unsigned long	boardType		= 0;
-	bool			isHdmiBoard		= false;
 
-	result = VHD_GetApiInfo(&DllVersion, &nbBoards);
-	if (result == VHDERR_NOERROR && nbBoards > 0)
-	{
-		if (VHD_OpenBoardHandle(0, &boardHandle, nullptr, 0) == VHDERR_NOERROR)
-		{
-			VHD_GetBoardProperty(boardHandle, VHD_CORE_BP_BOARD_TYPE, &boardType);
-			isHdmiBoard = ((boardType == VHD_BOARDTYPE_HDMI) ||
-				(boardType == VHD_BOARDTYPE_HDMI20) ||
-				(boardType == VHD_BOARDTYPE_FLEX_HMI) ||
-				(boardType == VHD_BOARDTYPE_MIXEDINTERFACE));
-		}
-	}
-	else
-	{
-		std::print("Error : Cannot query VideoMaster information.\n");
-	}
-	
-}
-
-HDMIAudioStream::~HDMIAudioStream()
-{
-	VHD_CloseStreamHandle(streamHandle);
-	VHD_CloseBoardHandle(boardHandle);
-}
-
-bool HDMIAudioStream::hardwareInfoCheck()
-{
-	unsigned long result		= 0;
-	unsigned long DllVersion	= 0;
-	unsigned long nbBoards		= 0;
-	unsigned long boardType		= 0;
-	bool          isHdmiBoard	= false;
-
-	result = VHD_GetApiInfo(&DllVersion, &nbBoards);
-	if (result == VHDERR_NOERROR && nbBoards > 0)
-	{
-		if (VHD_OpenBoardHandle(0, &boardHandle, nullptr, 0) == VHDERR_NOERROR)
-		{
-			VHD_GetBoardProperty(boardHandle, VHD_CORE_BP_BOARD_TYPE, &boardType);
-			isHdmiBoard = (	(boardType == VHD_BOARDTYPE_HDMI)		|| 
-							(boardType == VHD_BOARDTYPE_HDMI20)		|| 
-							(boardType == VHD_BOARDTYPE_FLEX_HMI)	|| 
-							(boardType == VHD_BOARDTYPE_MIXEDINTERFACE));
-			if (isHdmiBoard)
-			{
-				result = VHD_SetStreamProperty(streamHandle, VHD_DV_SP_MODE, VHD_DV_MODE_HDMI);
-			}
-			
-			return isHdmiBoard;
-		}
-	}
-	else
-	{
-		std::print("Error : Cannot query VideoMaster information.\n");
-		return false;
-	}
-}
-
-bool HDMIAudioStream::videoStreamInfoCheck()
-{
-	unsigned long	result = 0;
-	
-
-
-	return false;
-}
-
-void HDMIAudioStream::getAudioData(const int PA_SAMPLE_RATE, const int PA_OUTPUT_CHANNELS)
-{
-}
-*/
-
-bool combineBYTETo24Bit(        const std::uint8_t* sourceAudio, 
+combineBYTETo24Bit(        const std::uint8_t* sourceAudio, 
                                 const std:: size_t  sourceSize, 
                                       std::int32_t* combined24bit)
 {
@@ -297,6 +214,7 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>&     queue,
                                                                         {
                                                                             if (HDMIAudioType != VHD_DV_AUDIO_TYPE_NONE)
                                                                             {
+                                                                                
                                                                                 bufferSize = 0;
                                                                                 if (HDMIAudioAESSts.LinearPCM == VHD_DV_AUDIO_AES_SAMPLE_STS_LINEAR_PCM_SAMPLE)
                                                                                 {
@@ -310,12 +228,14 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>&     queue,
                                                                                     {
                                                                                         combineBYTETo24Bit(pAudioBuffer, bufferSize, combined24bit);
                                                                                         decodeAndConvertToFloat(combined24bit, combinedBufferSize, float32bit);
-
+                                                                                       
+                                                                                        /*
                                                                                         audioQueue<float> HDMIAudio(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, BUFFER_MAX, BUFFER_MIN);
-                                                                                        
-                                                                                        HDMIAudio.push(float32bit, combinedBufferSize, 44100);
-
+                                                                                        std::print("4\n\n");
+                                                                                        HDMIAudio.push(float32bit, combinedBufferSize, 44100,2);
+                                                                                        std::print("5\n\n");
                                                                                         queue.push_back(HDMIAudio);
+                                                                                        std::print("6\n\n");*/
                                                                                     }
                                                                                     else
                                                                                     {
