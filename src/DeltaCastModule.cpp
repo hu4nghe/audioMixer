@@ -157,14 +157,14 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>&     queue,
                     const   std::               uint32_t	    BUFFER_MAX,
                     const	std::               uint32_t	    BUFFER_MIN)
 {
-    unsigned long errorCode = 0;
+    unsigned long   errorCode = 0;
     
-    unsigned long              PxlClk = 0;
-    void* BoardHandle = nullptr;
-    void* StreamHandle = nullptr;
-    void* SlotHandle = nullptr;
-    unsigned char* pBuffer = nullptr;
-    unsigned char* pAudioBuffer = nullptr;
+    unsigned long   PxlClk = 0;
+    void*           BoardHandle = nullptr;
+    void*           StreamHandle = nullptr;
+    void*           SlotHandle = nullptr;
+    unsigned char*  pBuffer = nullptr;
+    unsigned char*  pAudioBuffer = nullptr;
     
     VHD_DV_MODE                DvMode = NB_VHD_DV_MODES;
     VHD_DV_CS                  InputCS;
