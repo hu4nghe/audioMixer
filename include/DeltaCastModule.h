@@ -21,12 +21,11 @@ private:
 	HANDLE streamHandle;
 	HANDLE slotHandle;
 };*/
-void Convert24bitTo32Bit(const uint8_t* sourceAudio,
-	size_t	sourceSize,
-	float* destinationAudio,
-	size_t	destinationSize);
+bool combineBYTETo24Bit(const std::uint8_t* sourceAudio,
+	const std::size_t  sourceSize,
+	std::int32_t* combined24bit);
 
-void DeltaCastRecv(					std::vector<audioQueue<float>>& queue,
+void DeltaCastRecv(					std::vector<audioQueue<std::int32_t>>& queue,
 							const	std::uint32_t	                PA_SAMPLE_RATE,
 							const	std::uint32_t	                PA_OUTPUT_CHANNELS,
 							const	std::uint32_t	                BUFFER_MAX,

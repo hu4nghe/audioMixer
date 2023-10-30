@@ -21,7 +21,7 @@ static void sigIntHandler(int) { exit_loop = true; }
 constexpr auto PA_BUFFER_SIZE				= 128;
 constexpr auto PA_INPUT_CHANNELS			= 0;		
 constexpr auto PA_OUTPUT_CHANNELS			= 2;
-constexpr auto PA_FORMAT					= paFloat32;
+constexpr auto PA_FORMAT					= paInt24;
 
 std::size_t PA_SAMPLE_RATE			= 44100;
 std::size_t AUDIOQUEUE_BUFFER_MAX	= 441000;
@@ -29,7 +29,7 @@ std::size_t AUDIOQUEUE_BUFFER_MIN	= 4410;
 
 std::vector<audioQueue<float>> NDIdata;
 std::vector<audioQueue<float>> SNDdata;
-std::vector<audioQueue<float>> DeltaCastData;
+std::vector<audioQueue<std::int32_t>> DeltaCastData;
 
 std::atomic<bool> NDIselectReady(false);
 #pragma endregion
@@ -131,10 +131,11 @@ static int portAudioOutputCallback( const	                    void* inputBuffer,
 											   PaStreamCallbackFlags  statusFlags,
 																void* UserData)
 {
-	auto out = static_cast<float*>(outputBuffer);
+	auto out = static_cast<int32_t*>(outputBuffer);
 	//Set output buffer to zero by default to avoid noise when there is no input.
 	memset(out, 0, sizeof(out) * framesPerBuffer);
 	//for every audioQueue in the list
+	/*
 	for (auto& currentAudioQueue : NDIdata)
 	{
 		if (currentAudioQueue.pop(out, framesPerBuffer, true))//pop in addition mode, return true if successefully poped.
@@ -149,8 +150,8 @@ static int portAudioOutputCallback( const	                    void* inputBuffer,
 	}*/
 	for (auto& currentAudioQueue : DeltaCastData)
 	{
-		currentAudioQueue.pop(out, framesPerBuffer, true);
-	}*/
+		currentAudioQueue.pop(out, framesPerBuffer, false);
+	}
 	return paContinue;
 }
 
@@ -200,15 +201,14 @@ void PAOutputThread()
 
 int main()
 {	
-	std::print("Configuration :\nplease enter output sample rate:(in Hz)\n");
-	std::cin >> PA_SAMPLE_RATE;
+	PAConfig();
 
-	std::thread ndiThread(NDIAudioTread);
+	//std::thread ndiThread(NDIAudioTread);
 	std::thread portaudio(PAOutputThread);
-	//std::thread deltaCast(DeltaCastThread);
+	std::thread deltaCast(DeltaCastThread);
 
-	ndiThread.join();
+	//ndiThread.join();
 	portaudio.join();
-	//deltaCast.join();
+	deltaCast.join();
 	return 0;
 }

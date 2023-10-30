@@ -56,7 +56,7 @@ void sndfileInputList::readAudioFile	(		std::vector<audioQueue<float>>& queue,
 		i.read(temp, bufferSize);
 
 		audioQueue<float> sndQueue(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, BUFFER_MAX,BUFFER_MIN);
-		sndQueue.push(temp, i.frames(), i.samplerate());
+		sndQueue.push(temp, i.frames(), i.samplerate(),i.channels());
 		delete[] temp;
 
 		queue.push_back(std::move(sndQueue));

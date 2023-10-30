@@ -153,7 +153,7 @@ float* decodeAndConvertToFloat( const std::int32_t* pcmData,
 
 
 
-void DeltaCastRecv(         std::vector<audioQueue<float>>&     queue,
+void DeltaCastRecv(         std::vector<audioQueue<std::int32_t>>&   queue,
                     const	std::               uint32_t	    PA_SAMPLE_RATE,
                     const   std::               uint32_t	    PA_OUTPUT_CHANNELS,
                     const   std::               uint32_t	    BUFFER_MAX,
@@ -304,16 +304,16 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>&     queue,
                                                                                     pAudioBuffer = new UBYTE[bufferSize];
                                                                                     size_t combinedBufferSize = bufferSize / 3; // Assuming 3 bytes per 24-bit sample
                                                                                     int32_t* combined24bit = new int32_t[combinedBufferSize];
-                                                                                    float* float32bit = new float[combinedBufferSize];
+                                                                                    //float* float32bit = new float[combinedBufferSize];
                                                                                     errorCode = VHD_SlotExtractDvPCMAudio(SlotHandle, VHD_DVAUDIOFORMAT_24, 0x3, pAudioBuffer, &bufferSize);
                                                                                     if (errorCode == VHDERR_NOERROR)
                                                                                     {
                                                                                         combineBYTETo24Bit(pAudioBuffer, bufferSize, combined24bit);
-                                                                                        decodeAndConvertToFloat(combined24bit, combinedBufferSize, float32bit);
+                                                                                        //decodeAndConvertToFloat(combined24bit, combinedBufferSize, float32bit);
 
-                                                                                        audioQueue<float> HDMIAudio(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, BUFFER_MAX, BUFFER_MIN);
+                                                                                        audioQueue<int32_t> HDMIAudio(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, BUFFER_MAX, BUFFER_MIN);
                                                                                         
-                                                                                        HDMIAudio.push(float32bit, combinedBufferSize, 44100);
+                                                                                        HDMIAudio.push(combined24bit, combinedBufferSize, 44100, 2);
 
                                                                                         queue.push_back(HDMIAudio);
                                                                                     }
@@ -322,7 +322,7 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>&     queue,
                                                                                         printf("\nERROR : Cannot get PCM audio slot buffer.");
                                                                                     }
                                                                                     delete[] combined24bit;
-                                                                                    delete[] float32bit;
+                                                                                    //delete[] float32bit;
                                                                                     
                                                                                 }
                                                                                 if (pAudioBuffer)

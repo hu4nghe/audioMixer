@@ -11,10 +11,10 @@
 /**
  * @brief 
  * 
- * @tparam T audio data type : 32bit float(-1,1) or 16bit short(-32767,32768).
+ * @tparam T audio data type : 32bit float(-1,1), 24bit int or 16bit short(-32767,32768).
  */
 template<typename T>
-concept audioType = std::same_as<T, short> || std::same_as<T, float>;
+concept audioType = std::same_as<T, short> || std::same_as<T, int32_t> || std::same_as<T, float>;
 
 template <audioType T>
 class audioQueue 
@@ -65,10 +65,10 @@ class audioQueue
     [[nodiscard]]                          bool  dequeue            (                   T&   value,
                                                                      const           bool    mode);
                                            void  clear              ();
-                                           void  resample           (       std::vector<T>&  data,
+                                           /*void  resample(std::vector<T>& data,
                                                                      const  std::  size_t    frames,
                                                                      const  std::uint32_t    inputSampleRate,
-                                                                     const  std:: uint8_t    inputNbChannel);
+                                                                     const  std:: uint8_t    inputNbChannel);*/
                                  std::vector<T>  channelConvert     (const  std::vector<T>&  data,
                                                                      const  std:: uint8_t    originalNbChannel,
                                                                      const  std:: uint8_t    targetNbChannel);
@@ -221,7 +221,7 @@ void audioQueue<T>::clear              ()
  * @param data input vector
  * @param frames input frames
  * @param inputSampleRate original sample rate
- */
+ 
 template<audioType T>
 void audioQueue<T>::resample           (      std::vector<T>  &data, 
                                         const std::  size_t    frames, 
@@ -246,7 +246,7 @@ void audioQueue<T>::resample           (      std::vector<T>  &data,
     src_delete (srcState);
 
     data = std::move(temp); //temp is moved and becomes deprecated to save costs.
-}
+}*/
 template<audioType T>
 std::vector<T> audioQueue<T>::channelConvert(
                                         const  std::vector<T>& data,
@@ -285,11 +285,11 @@ bool audioQueue<T>::push               (const             T*   data,
                                         const std::uint32_t    inputSampleRate,
                                         const std:: uint8_t    inputNbChannel)
 {
-    const auto currentSize  = frames * inputNbchannel;    
+    const auto currentSize  = frames * inputNbChannel;    
     std::vector<T> temp(data, data + currentSize);
 
     if (inputSampleRate != outputSampleRate) 
-        resample(temp, frames, inputSampleRate);
+        //resample(temp, frames, inputSampleRate, inputNbChannel);
 
     for (const auto &i : temp)
     {
