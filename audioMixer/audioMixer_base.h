@@ -70,24 +70,16 @@ public:
 
     /**
     * @brief try to capture NDI AUDIO data from every NDI receiver in recvList.
-    *
-    * @param queueList audioQueue objects that are used to stock audio data
-    * @param PA_SAMPLE_RATE portaudio OUTPUT sample rate
-    * @param PA_OUTPUT_CHANNELS portaudio OUTPUT channel numbers
-    * @param bufferMax max buffer size allocated for audioQueue.(defined by user.)
+    * 
     */
-    void NDIRecvAudio(const	 std::uint32_t	    PA_SAMPLE_RATE,
-                      const  std::uint32_t	    PA_OUTPUT_CHANNELS,
-                      const	 std::size_t	        bufferMax,
-                      const  std::size_t	        bufferMin);
+    void NDIRecvAudio(audioQueue<float>& target);
 private :
     bool                                activeStatus;
     std::uint32_t						sourceCount;
-    std::vector<NDIlib_recv_instance_t> recvList;
-    std::vector<audioQueue<float>>      NDIdata;
-    
+    std::vector<NDIlib_recv_instance_t> recvList;    
 };
 
+/*
 class sndfileModule : public audioMixerModule_base
 {
 public:
@@ -115,7 +107,7 @@ public:
 private:
     std::vector<fs::path>           pathList;
     std::vector<audioQueue<float>>  SNDData;
-};
+};*/
 
 class audioMixer 
 {
@@ -136,6 +128,36 @@ private:
     //portaudio stream
     PaStream*                       PaStreamOut;
     audioQueue<float>               outputAudioQueue;
+
+    int portAudioOutputCallback(const void*                     inputBuffer,
+                                      void*                     outputBuffer,
+                                      unsigned long				framesPerBuffer,
+                                const PaStreamCallbackTimeInfo* timeInfo,
+                                      PaStreamCallbackFlags		statusFlags);
+
+    static int PA_Callback(const void*                          inputBuffer, 
+                                 void*                          outputBuffer,
+                                 unsigned long                  framesPerBuffer,
+                           const PaStreamCallbackTimeInfo*      timeInfo,
+                                 PaStreamCallbackFlags          statusFlags,
+                                 void*                          userData)
+    {
+        return ((audioMixer*)userData)->portAudioOutputCallback(inputBuffer, 
+                                                                outputBuffer,
+                                                                framesPerBuffer,
+                                                                timeInfo,
+                                                                statusFlags);
+    }
+
+    inline void  PAErrorCheck(PaError err)
+    {
+        if (err)
+        {
+            std::print("PortAudio error : {}.\n", Pa_GetErrorText(err));
+            exit(EXIT_FAILURE);
+        }
+    }
+
 public:
     audioMixer() = default;
     audioMixer(const std::uint8_t   nbChannels, 
@@ -144,57 +166,7 @@ public:
                const std::size_t    min,
                const bool           enableNDI, 
                const bool           enableSndfile);
-
-    ~audioMixer();
+    ~audioMixer ();
+    void PaStart();
+    void PaStop ();
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-bool startOutput()
-    {
-        PA_Callback = [this](const  void*                       inputBuffer,
-                                void*                       outputBuffer,
-                                unsigned long               framesPerBuffer,
-                         const  PaStreamCallbackTimeInfo*   timeInfo,
-                                PaStreamCallbackFlags       statusFlags,
-                                void*                       userData) -> int
-            {
-                auto out = static_cast<int32_t*>(outputBuffer);
-                //Set output buffer to zero by default to avoid noise when there is no input.
-                memset(out, 0, sizeof(out) * framesPerBuffer);
-                if (NDIEnabled)
-                {
-                    for (auto& currentAudioQueue : *(this->NDI).)
-                    {
-                        if (currentAudioQueue.pop(out, framesPerBuffer, true))//pop in addition mode, return true if successefully poped.
-                        {
-                            auto samplePlayedPerSecond = static_cast<uint64_t>(currentAudioQueue.sampleRate()) * currentAudioQueue.channels();
-                            std::print("{}  samples	|	{}  ms.\n",
-                                currentAudioQueue.size(),
-                                currentAudioQueue.size() / samplePlayedPerSecond);
-                        }
-                        else
-                            std::print("Min buffer size reached, add more audio data to continue!\n");
-                    }
-                }
-                return 0;
-            };
-        portaudio = std::make_unique<portaudioModule>(nbChannels, sampleRate, PA_BufferSize, );
-        portaudio->start();
-    }*/

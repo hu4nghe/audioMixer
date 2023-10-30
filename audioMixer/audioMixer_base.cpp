@@ -85,19 +85,18 @@ bool NDIModule::NDISourceSearch()
 	return true;
 }
 
-void NDIModule::NDIRecvAudio(const std::uint32_t PA_SAMPLE_RATE, 
-							 const std::uint32_t PA_OUTPUT_CHANNELS, 
-							 const std::size_t	bufferMax, 
-							 const std::size_t	bufferMin)
+void NDIModule::NDIRecvAudio(audioQueue<float>& target)
 {
+	std::vector<audioQueue<float>> NDIQueues;
+	NDIQueues.reserve(recvList.size() * target.max());
 	for (auto i : recvList)
 	{
-		audioQueue<float> dataQueue(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, bufferMax, bufferMin);
-		NDIdata.push_back(std::move(dataQueue));
+		audioQueue<float> dataQueue(target.sampleRate(), target.channels(), target.max(), target.min());
+		NDIQueues.push_back(std::move(dataQueue));
 	}
 	while (true)
 	{
-		for (auto i = 0; i < recvList.size(); i++)
+		for (auto &i : recvList)
 		{
 			NDIlib_audio_frame_v2_t audioInput;
 			auto type = NDIlib_recv_capture_v2(recvList[i], nullptr, &audioInput, nullptr, 0);
@@ -110,7 +109,7 @@ void NDIModule::NDIRecvAudio(const std::uint32_t PA_SAMPLE_RATE,
 				audioDataNDI.p_data = new float[dataSize];
 				NDIlib_util_audio_to_interleaved_32f_v2(&audioInput, &audioDataNDI);
 
-				if (!NDIdata[i].push(audioDataNDI.p_data, audioDataNDI.no_samples, audioDataNDI.sample_rate, audioDataNDI.no_channels))
+				if (!target.push(audioDataNDI.p_data, audioDataNDI.no_samples, audioDataNDI.sample_rate, audioDataNDI.no_channels))
 					std::print("No more space in the queue!\n");
 
 				delete[] audioDataNDI.p_data;
@@ -121,6 +120,7 @@ void NDIModule::NDIRecvAudio(const std::uint32_t PA_SAMPLE_RATE,
 }
 #pragma endregion
 
+/*
 #pragma region sndfileModule
 void sndfileModule::selectAudioFile()
 {
@@ -178,20 +178,44 @@ void sndfileModule::readAudioFile(	const std::uint32_t PA_SAMPLE_RATE,
 	}
 	return;
 }
-#pragma endregion
+#pragma endregion*/
 
-#pragma region audioMixer 
-audioMixer::audioMixer(const std::uint8_t	nbChannels, 
+#pragma region audioMixer
+int audioMixer::portAudioOutputCallback(const void*							inputBuffer, 
+											  void*							outputBuffer, 
+											  unsigned long					framesPerBuffer, 
+										const PaStreamCallbackTimeInfo*		timeInfo, 
+											  PaStreamCallbackFlags			statusFlags)
+{
+		auto out = static_cast<float*>(outputBuffer);
+		//Set output buffer to zero by default to avoid noise when there is no input.
+		memset(out, 0, sizeof(out) * framesPerBuffer);
+
+		outputAudioQueue.pop(out, framesPerBuffer, true);
+		return paContinue;
+
+}
+
+audioMixer::audioMixer(const std::uint8_t	nbChannels,
 					   const std::size_t	sampleRate, 
 					   const std::size_t	max, 
 					   const std::size_t	min, 
 					   const bool			enableNDI, 
 					   const bool			enableSndfile) : 
 	outputAudioQueue(sampleRate,nbChannels,max,min),
-	portaudio		(sampleRate,nbChannels,128),
 	NDIEnabled		(enableNDI),
-	sndfileEnabled	(enableSndfile)
+	sndfileEnabled	(enableSndfile),
+	PaStreamOut		(nullptr)
 {
+	PAErrorCheck(Pa_Initialize());
+	PAErrorCheck(Pa_OpenDefaultStream(&PaStreamOut,
+									   0,			//no input
+									   nbChannels,
+									   paFloat32,	//32bit float
+									   sampleRate,
+									   128,
+									  &audioMixer::PA_Callback,
+									   this));
 	if (NDIEnabled)
 	{
 		if (!NDI)
@@ -212,6 +236,7 @@ audioMixer::audioMixer(const std::uint8_t	nbChannels,
 	}
 	else sndfile = nullptr;
 }
+
 audioMixer::~audioMixer()
 {
 	if (NDI)
@@ -224,5 +249,22 @@ audioMixer::~audioMixer()
 		sndfile->stop();
 		sndfile.release();
 	}
+	if (Pa_IsStreamActive(PaStreamOut))
+		PAErrorCheck(Pa_StopStream(PaStreamOut));
+
+	PAErrorCheck(Pa_CloseStream(PaStreamOut));
+	PAErrorCheck(Pa_Terminate());
+}
+void audioMixer::PaStart()
+{
+	if (Pa_IsStreamStopped(PaStreamOut))
+		Pa_StartStream(PaStreamOut);
+	std::print("PortAudio is active.\n");
+}
+void audioMixer::PaStop()
+{
+	if (Pa_IsStreamActive(PaStreamOut))
+		Pa_StopStream(PaStreamOut);
+	std::print("PortAudio is stopped.\n");
 }
 #pragma endregion
