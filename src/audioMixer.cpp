@@ -23,42 +23,18 @@ constexpr auto PA_INPUT_CHANNELS			= 0;
 constexpr auto PA_OUTPUT_CHANNELS			= 2;
 constexpr auto PA_FORMAT					= paFloat32;
 
-auto PA_SAMPLE_RATE			= 44100;
-auto AUDIOQUEUE_BUFFER_MAX	= 441000;
-auto AUDIOQUEUE_BUFFER_MIN	= 4410;
+std::size_t PA_SAMPLE_RATE			= 44100;
+std::size_t AUDIOQUEUE_BUFFER_MAX	= 441000;
+std::size_t AUDIOQUEUE_BUFFER_MIN	= 4410;
 
 std::vector<audioQueue<float>> NDIdata;
 std::vector<audioQueue<float>> SNDdata;
-std::vector<audioQueue<float>> DeltaCastDATA;
+std::vector<audioQueue<float>> DeltaCastData;
 
 std::atomic<bool> NDIselectReady(false);
 #pragma endregion
 
-/**
- * @brief Error checker PortAudio library.
- * 
- * In case of error, print error message and exit with failure. 
- * 
- * @param err PaError type error code.
- */
-inline void  PAErrorCheck (PaError err)
-{ 
-	if (err)
-	{ 
-		std::print("PortAudio error : {}.\n", Pa_GetErrorText(err)); 
-		exit(EXIT_FAILURE);
-	} 
-}
-/**
- * @brief unfinished channel management function
- * 
-*/
-void channelAdaption(int originalChannel, int outputChannel)
-{
-
-}
-
-#pragma region NDI Inout
+#pragma region NDI Input
 /**
  * @brief Thread that capture audio input from NDI sources.
  * 
@@ -98,13 +74,62 @@ void sndfileRead()
 }
 #pragma endregion
 
-#pragma region PA output
-static int portAudioOutputCallback(	const	                    void*	inputBuffer,
-											                    void*	outputBuffer,
-											           unsigned long	framesPerBuffer,
-									const	PaStreamCallbackTimeInfo*	timeInfo,
-											   PaStreamCallbackFlags	statusFlags,
-											                    void*	UserData)
+#pragma region DeltaCast input
+void DeltaCastThread()
+{
+	DeltaCastRecv(	DeltaCastData,
+					PA_SAMPLE_RATE,
+					PA_OUTPUT_CHANNELS,
+					AUDIOQUEUE_BUFFER_MAX,
+				AUDIOQUEUE_BUFFER_MIN);
+	
+	return;
+
+}
+#pragma endregion
+
+#pragma region PortAudio
+void PAConfig()
+{
+	std::print("Configuration :\nplease enter output sample rate:(in Hz)\n");
+	std::cin >> PA_SAMPLE_RATE;
+
+	std::size_t timeMax;
+	std::print("please enter the max buffer size(in ms)\n");
+	std::cin >> timeMax;
+	timeMax /= 1000;
+
+	AUDIOQUEUE_BUFFER_MAX = timeMax * PA_SAMPLE_RATE * PA_OUTPUT_CHANNELS;
+
+	std::size_t timeMin;
+	std::print("please enter the min buffer size(in ms)\n");
+	std::cin >> timeMin;
+	timeMin /= 1000;
+	AUDIOQUEUE_BUFFER_MIN = timeMin * PA_SAMPLE_RATE * PA_OUTPUT_CHANNELS;
+}
+
+/**
+ * @brief Error checker PortAudio library.
+ *
+ * In case of error, print error message and exit with failure.
+ *
+ * @param err PaError type error code.
+ */
+inline void  PAErrorCheck(PaError err)
+{
+	if (err)
+	{
+		std::print("PortAudio error : {}.\n", Pa_GetErrorText(err));
+		exit(EXIT_FAILURE);
+	}
+}
+
+static int portAudioOutputCallback( const	                    void* inputBuffer,
+																void* outputBuffer,
+													   unsigned long  framesPerBuffer,
+									const	PaStreamCallbackTimeInfo* timeInfo,
+											   PaStreamCallbackFlags  statusFlags,
+																void* UserData)
 {
 	auto out = static_cast<float*>(outputBuffer);
 	//Set output buffer to zero by default to avoid noise when there is no input.
@@ -121,18 +146,15 @@ static int portAudioOutputCallback(	const	                    void*	inputBuffer,
 		}
 		else
 			std::print("Min buffer size reached, add more audio data to continue!\n");
-	}
-	/*
-	for (auto& currentAudioQueue : DeltaCastDATA)
+	}*/
+	for (auto& currentAudioQueue : DeltaCastData)
 	{
 		currentAudioQueue.pop(out, framesPerBuffer, true);
 	}*/
 	return paContinue;
 }
 
-
-
-void portAudioOutputThread()
+void PAOutputThread()
 {
 	std::signal(SIGINT, sigIntHandler);
 
@@ -141,11 +163,11 @@ void portAudioOutputThread()
 
 	//initialize portaudio stream using default devices.
 	PAErrorCheck(Pa_OpenDefaultStream( &streamOut,
-										PA_INPUT_CHANNELS,				
-										PA_OUTPUT_CHANNELS,				
-										PA_FORMAT,						
-										PA_SAMPLE_RATE,					
-										PA_BUFFER_SIZE,					
+										PA_INPUT_CHANNELS,
+										PA_OUTPUT_CHANNELS,
+										PA_FORMAT,
+										PA_SAMPLE_RATE,
+										PA_BUFFER_SIZE,
 										portAudioOutputCallback,
 										nullptr));
 	Pa_StartStream(streamOut);
@@ -153,11 +175,11 @@ void portAudioOutputThread()
 	while (!exit_loop)
 	{
 		char ch = getchar();
-		if (ch == ' ') 
+		if (ch == ' ')
 		{
-			if(PaActiveFlag)
+			if (PaActiveFlag)
 			{
-				Pa_StopStream (streamOut);
+				Pa_StopStream(streamOut);
 				std::print("Portaudio Status : Stopped.\n");
 			}
 			else
@@ -166,49 +188,23 @@ void portAudioOutputThread()
 				std::print("Portaudio Status : Active. \n");
 			}
 
-			PaActiveFlag = !PaActiveFlag;			
+			PaActiveFlag = !PaActiveFlag;
 		}
-		
+
 	}
-	PAErrorCheck(Pa_StopStream (streamOut));
+	PAErrorCheck(Pa_StopStream(streamOut));
 	PAErrorCheck(Pa_CloseStream(streamOut));
 	PAErrorCheck(Pa_Terminate());
 }
 #pragma endregion
-
-void DeltaCastThread()
-{
-	DeltaCastRecv(DeltaCastDATA,
-		PA_SAMPLE_RATE,
-		PA_OUTPUT_CHANNELS,
-		AUDIOQUEUE_BUFFER_MAX,
-		AUDIOQUEUE_BUFFER_MIN);
-	
-	return;
-
-}
 
 int main()
 {	
 	std::print("Configuration :\nplease enter output sample rate:(in Hz)\n");
 	std::cin >> PA_SAMPLE_RATE;
 
-	float timeMax;
-	std::print("please enter the max buffer size(in ms)\n");
-	std::cin >> timeMax;
-	timeMax /= 1000;
-		
-	AUDIOQUEUE_BUFFER_MAX = timeMax * PA_SAMPLE_RATE * PA_OUTPUT_CHANNELS;
-	
-	float timeMin;
-	std::print("please enter the min buffer size(in ms)\n");
-	std::cin >> timeMin;
-	timeMin /= 1000;
-
-	AUDIOQUEUE_BUFFER_MIN = timeMin * PA_SAMPLE_RATE * PA_OUTPUT_CHANNELS;
-
 	std::thread ndiThread(NDIAudioTread);
-	std::thread portaudio(portAudioOutputThread);
+	std::thread portaudio(PAOutputThread);
 	//std::thread deltaCast(DeltaCastThread);
 
 	ndiThread.join();

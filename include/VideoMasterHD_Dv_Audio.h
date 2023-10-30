@@ -15,7 +15,7 @@ Company : DELTACAST
 
 Author  : ac                             Date: 2018/02/28
 
-Purpose : DV stands for « Digital Video » and regroups the following technologies: DVI, HDMI, DisplayPort.
+Purpose : DV stands for ?Digital Video ?and regroups the following technologies: DVI, HDMI, DisplayPort.
 
 */
 

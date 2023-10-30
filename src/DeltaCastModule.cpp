@@ -1,11 +1,13 @@
 #include <print>
+#include <functional>
+
 #include "audioQueue.h"
 #include "VideoMasterHD_Core.h"
 #include "VideoMasterHD_Dv.h"
 #include "VideoMasterHD_Dv_Audio.h"
 #include "sndfile.h"
 #include "DeltaCastModule.h"
-#include <functional>
+
 /*
 HDMIAudioStream::HDMIAudioStream()
 {
@@ -96,7 +98,7 @@ bool combineBYTETo24Bit(        const std::uint8_t* sourceAudio,
 {
     if (sourceSize % 3)
     {
-        std::print("HDMI Audio Error : Invalid buffer size for 24 - bit audio data.\n");
+        std::print("HDMI Audio Error : Invalid buffer size for 24 bit audio data.\n");
         return false;
     }
     else
