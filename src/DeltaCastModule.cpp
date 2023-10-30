@@ -9,31 +9,30 @@
 #include "DeltaCastModule.h"
 
 
-combineBYTETo24Bit(        const std::uint8_t* sourceAudio, 
-                                const std:: size_t  sourceSize, 
-                                      std::int32_t* combined24bit)
+std::vector<int32_t> combineBYTETo24Bit(const std::uint8_t* sourceAudio, 
+                                        const std:: size_t  sourceSize)
 {
+    std::vector<int32_t> combined24bit;
     if (sourceSize % 3)
     {
         std::print("HDMI Audio Error : Invalid buffer size for 24 bit audio data.\n");
-        return false;
+        exit(EXIT_FAILURE);
     }
     else
     {
+        std::print("sourceSize = {}, mod 3 = {}\n",sourceSize, sourceSize % 3);
         for (auto i = 0, j = 0; i < sourceSize; i += 3, ++j)
         {
             std::uint32_t sample24 = static_cast<std::uint32_t>(sourceAudio[i    ] << 16) |
                                      static_cast<std::uint32_t>(sourceAudio[i + 1] << 8 ) |
                                      static_cast<std::uint32_t>(sourceAudio[i + 2]);
-            combined24bit[j] = sample24;
+            combined24bit.push_back( sample24);
         }
     }
-    return true;
+    return combined24bit;
 }
 
-float* decodeAndConvertToFloat( const std::int32_t* pcmData, 
-                                const std:: size_t  numSamples, 
-                                             float* floatData)
+std::vector<float> decodeAndConvertToFloat( const std::vector<int32_t>& pcmData)
 {
     auto read = [](void* data, sf_count_t count,void* user_data ) -> sf_count_t
     {
@@ -61,11 +60,15 @@ float* decodeAndConvertToFloat( const std::int32_t* pcmData,
     virtualIO.seek = nullptr;
      
 
-    sndFile = sf_open_virtual(&virtualIO, SFM_READ, &sfInfo, (void*)pcmData);
-    sf_readf_float(sndFile, floatData, numSamples);
+    float* floatData = new float[pcmData.size()];
+
+    sndFile = sf_open_virtual(&virtualIO, SFM_READ, &sfInfo, (void*)pcmData.data());
+    sf_readf_float(sndFile, floatData, pcmData.size());
     sf_close(sndFile);
 
-    return floatData;
+    std::vector<float> res(floatData, floatData + pcmData.size());
+    delete[] floatData;
+    return res;
 }
 
 
@@ -220,30 +223,24 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>&     queue,
                                                                                 {
                                                                                     VHD_SlotExtractDvPCMAudio(SlotHandle, VHD_DVAUDIOFORMAT_24, 0x3, nullptr, &bufferSize);
                                                                                     pAudioBuffer = new UBYTE[bufferSize];
-                                                                                    size_t combinedBufferSize = bufferSize / 3; // Assuming 3 bytes per 24-bit sample
-                                                                                    int32_t* combined24bit = new int32_t[combinedBufferSize];
-                                                                                    float* float32bit = new float[combinedBufferSize];
                                                                                     errorCode = VHD_SlotExtractDvPCMAudio(SlotHandle, VHD_DVAUDIOFORMAT_24, 0x3, pAudioBuffer, &bufferSize);
                                                                                     if (errorCode == VHDERR_NOERROR)
                                                                                     {
-                                                                                        combineBYTETo24Bit(pAudioBuffer, bufferSize, combined24bit);
-                                                                                        decodeAndConvertToFloat(combined24bit, combinedBufferSize, float32bit);
+                                                                                        std::vector<int32_t> combined24bit = combineBYTETo24Bit (pAudioBuffer, bufferSize);
+                                                                                        std::vector<float> float32bit = decodeAndConvertToFloat(combined24bit);
                                                                                        
-                                                                                        /*
+                                                                                        
                                                                                         audioQueue<float> HDMIAudio(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, BUFFER_MAX, BUFFER_MIN);
-                                                                                        std::print("4\n\n");
-                                                                                        HDMIAudio.push(float32bit, combinedBufferSize, 44100,2);
-                                                                                        std::print("5\n\n");
-                                                                                        queue.push_back(HDMIAudio);
-                                                                                        std::print("6\n\n");*/
+                                                                                        
+                                                                                        HDMIAudio.push(float32bit.data(), float32bit.size(), 44100, 2);
+                                                                                        
+                                                                                        //queue.push_back(HDMIAudio);
+                                                                                        
                                                                                     }
                                                                                     else
                                                                                     {
                                                                                         printf("\nERROR : Cannot get PCM audio slot buffer.");
                                                                                     }
-                                                                                    delete[] combined24bit;
-                                                                                    delete[] float32bit;
-                                                                                    
                                                                                 }
                                                                                 if (pAudioBuffer)
                                                                                 {
