@@ -29,7 +29,7 @@ std::size_t AUDIOQUEUE_BUFFER_MIN	= 4410;
 
 std::vector<audioQueue<float>> NDIdata;
 std::vector<audioQueue<float>> SNDdata;
-audioQueue<float> DeltaCastData;
+audioQueue<float> DeltaCastData(44100,2,800000,0);
 
 std::atomic<bool> InputReady(false);
 #pragma endregion
@@ -146,7 +146,14 @@ static int portAudioOutputCallback( const	                    void* inputBuffer,
 	}*/
 	
 	
+	
 	DeltaCastData.pop(out, framesPerBuffer, true);
+	/*
+	for (int i = 0; i < framesPerBuffer; i++)
+	{
+		std::print("{}\n", out[i]);
+	}*/
+
 	return paContinue;
 }
 
@@ -195,6 +202,7 @@ void PAOutputThread()
 
 int main()
 {	
+	
 	PAConfig();
 
 	//std::thread ndiThread(NDIAudioTread);
@@ -203,6 +211,7 @@ int main()
 
 	//ndiThread.join();
 	portaudio.join();
-	//deltaCast.join();
+	deltaCast.join();
+
 	return 0;
 }

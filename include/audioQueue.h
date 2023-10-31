@@ -45,7 +45,7 @@ class audioQueue
                                                                      const  std::uint32_t    inputSampleRate,
                                                                      const  std:: uint8_t    inputNbChannel);
 
-                                           bool  pop                (                   T*&  data,
+                                           bool  pop                (                   T*   data,
                                                                      const  std::  size_t    frames,
                                                                      const           bool    mode);
 
@@ -311,7 +311,7 @@ bool audioQueue<T>::push               (const             T*   data,
  * @return false if pop failed or partially failed due to no enough samples in buffer.
  */
 template<audioType T>
-bool audioQueue<T>::pop                (                  T*&  data, 
+bool audioQueue<T>::pop                (                  T*   data, 
                                         const std::  size_t    frames,
                                         const          bool    mode)
 {

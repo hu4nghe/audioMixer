@@ -1,4 +1,4 @@
-#include <print>
+﻿#include <print>
 #include <functional>
 
 #include "audioQueue.h"
@@ -25,14 +25,13 @@ std::vector<int32_t> combineBYTETo24Bit(const std::uint8_t* sourceAudio,
             std::uint32_t sample24 = static_cast<std::uint32_t>(sourceAudio[i    ] << 16) |
                                      static_cast<std::uint32_t>(sourceAudio[i + 1] << 8 ) |
                                      static_cast<std::uint32_t>(sourceAudio[i + 2]);
-            combined24bit.push_back( sample24);
-            std::print("                {}\n", sample24);
+            combined24bit.push_back(sample24);
         }
     }
     return combined24bit;
 }
 
-std::vector<float> decodeAndConvertToFloat( const std::vector<int32_t>& pcmData)
+std::vector<float> decodeAndConvertToFloat( const std::vector<std::int32_t>& pcmData)
 {
     auto read = [](void* data, sf_count_t count,void* user_data ) -> sf_count_t
     {
@@ -40,6 +39,7 @@ std::vector<float> decodeAndConvertToFloat( const std::vector<int32_t>& pcmData)
         std::memcpy(data, pcmData, count);
         return count;
     };
+    std::function<sf_count_t(void*, sf_count_t, void*)> readFunction = read;
 
     SNDFILE*    sndFile;
     SF_INFO     sfInfo;
@@ -47,23 +47,24 @@ std::vector<float> decodeAndConvertToFloat( const std::vector<int32_t>& pcmData)
     std::memset(&sfInfo, 0, sizeof(sfInfo));
 
     sfInfo.format       = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
+    sfInfo.channels     = 2;
     sfInfo.samplerate   = 44100;
 
     SF_VIRTUAL_IO virtualIO;
-
     
-    std::function<sf_count_t(void*, sf_count_t, void*)> readFunction = read;
     virtualIO.read = reinterpret_cast<sf_vio_read>(readFunction.target<void(void*, sf_count_t, void*)>());
-
-
-    virtualIO.get_filelen = nullptr;
-    virtualIO.seek = nullptr;
+    virtualIO.get_filelen   = nullptr;
+    virtualIO.seek          = nullptr;
+    virtualIO.write         = nullptr; 
+    virtualIO.tell          = nullptr;
      
 
     float* floatData = new float[pcmData.size()];
 
     sndFile = sf_open_virtual(&virtualIO, SFM_READ, &sfInfo, (void*)pcmData.data());
-    sf_readf_float(sndFile, floatData, pcmData.size());
+
+    sf_readf_float(sndFile, floatData, pcmData.size()/2);
+
     sf_close(sndFile);
 
     std::vector<float> res(floatData, floatData + pcmData.size());
@@ -75,7 +76,23 @@ std::vector<float> decodeAndConvertToFloat( const std::vector<int32_t>& pcmData)
     return res;
 }
 
+std::vector<float> mapToFloatVector(const std::vector<std::int32_t>& inputVector)
+{
+    std::vector<float> outputVector(inputVector.size());
 
+    float inputMin = -8388608.0f;
+    float inputMax = 8388607.0f;
+    float outputMin = -1.0f;
+    float outputMax = 1.0f;
+
+    for (const int& value : inputVector)
+    {
+        float mappedValue = ((value - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin;
+        outputVector.push_back(mappedValue);
+    }
+
+    return outputVector;
+}
 
 void DeltaCastRecv(                     audioQueue<float>&     queue,
                     const	std::               uint32_t	    PA_SAMPLE_RATE,
@@ -231,10 +248,8 @@ void DeltaCastRecv(                     audioQueue<float>&     queue,
                                                                                     if (errorCode == VHDERR_NOERROR)
                                                                                     {
                                                                                         std::vector<int32_t> combined24bit = combineBYTETo24Bit (pAudioBuffer, bufferSize);
-                                                                                        std::vector<float> float32bit = decodeAndConvertToFloat(combined24bit);
-                                                                                       
-                                                                                        
-                                                                                        queue.push(float32bit.data(), float32bit.size()/2, 44100, 2);
+                                                                                        std::vector<float> float32bit = mapToFloatVector(combined24bit);
+                                                                                        queue.push(float32bit.data(), float32bit.size() / 2, 44100, 2);
                                                                                     }
                                                                                     else
                                                                                     {
