@@ -20,13 +20,13 @@ std::vector<int32_t> combineBYTETo24Bit(const std::uint8_t* sourceAudio,
     }
     else
     {
-        std::print("sourceSize = {}, mod 3 = {}\n",sourceSize, sourceSize % 3);
         for (auto i = 0, j = 0; i < sourceSize; i += 3, ++j)
         {
             std::uint32_t sample24 = static_cast<std::uint32_t>(sourceAudio[i    ] << 16) |
                                      static_cast<std::uint32_t>(sourceAudio[i + 1] << 8 ) |
                                      static_cast<std::uint32_t>(sourceAudio[i + 2]);
             combined24bit.push_back( sample24);
+            std::print("                {}\n", sample24);
         }
     }
     return combined24bit;
@@ -68,12 +68,16 @@ std::vector<float> decodeAndConvertToFloat( const std::vector<int32_t>& pcmData)
 
     std::vector<float> res(floatData, floatData + pcmData.size());
     delete[] floatData;
+    for (auto& i : res)
+    {
+        std::print("{}\n", i);
+    }
     return res;
 }
 
 
 
-void DeltaCastRecv(         std::vector<audioQueue<float>>&     queue,
+void DeltaCastRecv(                     audioQueue<float>&     queue,
                     const	std::               uint32_t	    PA_SAMPLE_RATE,
                     const   std::               uint32_t	    PA_OUTPUT_CHANNELS,
                     const   std::               uint32_t	    BUFFER_MAX,
@@ -230,12 +234,7 @@ void DeltaCastRecv(         std::vector<audioQueue<float>>&     queue,
                                                                                         std::vector<float> float32bit = decodeAndConvertToFloat(combined24bit);
                                                                                        
                                                                                         
-                                                                                        audioQueue<float> HDMIAudio(PA_SAMPLE_RATE, PA_OUTPUT_CHANNELS, BUFFER_MAX, BUFFER_MIN);
-                                                                                        
-                                                                                        HDMIAudio.push(float32bit.data(), float32bit.size(), 44100, 2);
-                                                                                        
-                                                                                        //queue.push_back(HDMIAudio);
-                                                                                        
+                                                                                        queue.push(float32bit.data(), float32bit.size()/2, 44100, 2);
                                                                                     }
                                                                                     else
                                                                                     {

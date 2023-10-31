@@ -84,7 +84,7 @@ template<audioType T>
 audioQueue<T>::audioQueue()
     :   queue            (0),  
         outputSampleRate (0), 
-        outputNbChannel       (0),
+        outputNbChannel  (0),
         head             (0), 
         tail             (0), 
         elementCount     (0),
@@ -287,16 +287,16 @@ bool audioQueue<T>::push               (const             T*   data,
 {
     const auto currentSize  = frames * inputNbChannel;    
     std::vector<T> temp(data, data + currentSize);
-    std::print("creation temp no souci\n\n");
+   
     if (inputSampleRate != outputSampleRate) 
         resample(temp, frames, inputSampleRate,inputNbChannel);
-    std::print("check resampling pas de souci\n\n");
+    
     for (const auto &i : temp)
     {
         if (!this->enqueue(i))
             return false;
     }
-    std::print("push pas de souci\n\n");
+    
     return true;
 }
 /**

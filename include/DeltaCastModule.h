@@ -21,12 +21,7 @@ private:
 	HANDLE streamHandle;
 	HANDLE slotHandle;
 };*/
-void Convert24bitTo32Bit(const uint8_t* sourceAudio,
-	size_t	sourceSize,
-	float* destinationAudio,
-	size_t	destinationSize);
-
-void DeltaCastRecv(					std::vector<audioQueue<float>>& queue,
+void DeltaCastRecv(					audioQueue<float>& queue,
 							const	std::uint32_t	                PA_SAMPLE_RATE,
 							const	std::uint32_t	                PA_OUTPUT_CHANNELS,
 							const	std::uint32_t	                BUFFER_MAX,

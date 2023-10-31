@@ -29,7 +29,7 @@ std::size_t AUDIOQUEUE_BUFFER_MIN	= 4410;
 
 std::vector<audioQueue<float>> NDIdata;
 std::vector<audioQueue<float>> SNDdata;
-std::vector<audioQueue<float>> DeltaCastData;
+audioQueue<float> DeltaCastData;
 
 std::atomic<bool> InputReady(false);
 #pragma endregion
@@ -145,10 +145,8 @@ static int portAudioOutputCallback( const	                    void* inputBuffer,
 			std::print("Min buffer size reached, add more audio data to continue!\n");
 	}*/
 	
-	for (auto& currentAudioQueue : DeltaCastData)
-	{
-		currentAudioQueue.pop(out, framesPerBuffer, true);
-	}
+	
+	DeltaCastData.pop(out, framesPerBuffer, true);
 	return paContinue;
 }
 
