@@ -1,4 +1,7 @@
-﻿#include <csignal>
+﻿#ifndef AUDIO_MIXER_BASE_H
+#define AUDIO_MIXER_BASE_H
+
+#include <csignal>
 #include <iostream>
 #include <functional>
 
@@ -11,7 +14,8 @@
 class audioMixerModule_base
 {
 public:
-    //any copy or move of a Module is NOT possible! 
+
+    //any copy or move of a Module is NOT possible!
     audioMixerModule_base(const audioMixerModule_base&  other) = delete;
     audioMixerModule_base(      audioMixerModule_base&& other) = delete;
 
@@ -30,7 +34,7 @@ public:
     NDIModule() 
         :   sourceCount (0), 
             recvList    (0),
-            activeStatus(false){}
+            active(false){}
 
    ~NDIModule() = default;
 
@@ -38,7 +42,7 @@ public:
 	{
         NDIlib_initialize();
 		std::print("NDI Module is activated.\n");
-        activeStatus = true;
+        active = true;
 	}
 
 	void stop    () override 
@@ -50,10 +54,10 @@ public:
 
         NDIlib_destroy();
         std::print("NDI Module is stopped.\n");
-        activeStatus = false;
+        active = false;
 	}
 
-    bool isActive() override { return activeStatus; }
+    bool isActive() override { return active; }
 
 	/**
 	* @brief try to search all NDI audio source available and let user select sources wanted.
@@ -73,13 +77,14 @@ public:
     * 
     */
     void NDIRecvAudio(audioQueue<float>& target);
+
 private :
-    bool                                activeStatus;
+    bool                                active;
     std::uint32_t						sourceCount;
     std::vector<NDIlib_recv_instance_t> recvList;    
 };
 
-/*
+
 class sndfileModule : public audioMixerModule_base
 {
 public:
@@ -107,7 +112,7 @@ public:
 private:
     std::vector<fs::path>           pathList;
     std::vector<audioQueue<float>>  SNDData;
-};*/
+};
 
 class audioMixer 
 {
@@ -170,3 +175,4 @@ public:
     void PaStart();
     void PaStop ();
 };
+#endif //AUDIO_MIXER_BASE_H;

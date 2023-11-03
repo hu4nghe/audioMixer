@@ -26,8 +26,11 @@
     <ClInclude Include="audioMixer_base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\audioMixer.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="..\include\audio_base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\NDIRecvModule.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

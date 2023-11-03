@@ -6,13 +6,13 @@ namespace fs = std::filesystem;
 #pragma region NDIModule
 bool NDIModule::NDISourceSearch()
 {
-	if (!activeStatus)
+	if (!active)
 	{
 		std::print("Error : NDI stream is not running!\n");
 		return false;
 	}
 
-	constexpr auto NDI_TIMEOUT = 1000;
+	constexpr auto timeout = 1000;
 	//Create a NDI finder and find sources available.
 	const NDIlib_find_create_t NDIFindCreateDesc;
 	auto pNDIFind = NDIlib_find_create_v2(&NDIFindCreateDesc);
@@ -27,7 +27,7 @@ bool NDIModule::NDISourceSearch()
 	bool found = false;
 	while (!found)
 	{
-		NDIlib_find_wait_for_sources(pNDIFind, NDI_TIMEOUT);
+		NDIlib_find_wait_for_sources(pNDIFind, timeout);
 		pSources = NDIlib_find_get_current_sources(pNDIFind, &NDISourceNum);
 		found = true;
 	}

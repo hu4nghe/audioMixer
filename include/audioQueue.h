@@ -58,7 +58,7 @@ class audioQueue
     [[nodiscard]]       inline    std::  size_t  size               ()                                              const  noexcept     { return  elementCount.load();      }
     [[nodiscard]]       inline    std:: uint8_t  channels           ()                                              const  noexcept     { return  outputNbChannel;          }
     [[nodiscard]]       inline    std::uint32_t  sampleRate         ()                                              const  noexcept     { return  outputSampleRate;         }
-                        inline    std::  size_t  max                ()                                                                  { return  queue.size();                    }
+                        inline    std::  size_t  max                ()                                                                  { return  queue.size();             }
                         inline    std::  size_t  min                ()                                                                  { return  bufferMin;                }
     private :
     [[nodiscard]]                          bool  enqueue            (const              T    value);

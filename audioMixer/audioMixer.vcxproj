@@ -99,6 +99,8 @@
     <ClCompile Include="audioMixer_base.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\audio_base.h" />
+    <ClInclude Include="..\include\NDIRecvModule.h" />
     <ClInclude Include="audioMixer_base.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
